@@ -1,0 +1,9 @@
+DEVELOPMENT_CHALLENGES.md
+.DS_Store
+node_modules/
+target/
+.idea/
+.vscode/
+
+# runtime uploads
+uploads/

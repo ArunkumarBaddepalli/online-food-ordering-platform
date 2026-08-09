@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { getRestaurantMenu, addToCart, clearCart, getRestaurantLiveStatus } from "../services/api";
+import { getRestaurantMenu, addToCart, clearCart, getRestaurantLiveStatus, API_BASE } from "../services/api";
 import ModifierSelectionModal from "../components/ModifierSelectionModal";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 
 const RestaurantMenu = () => {
@@ -10,11 +10,21 @@ const RestaurantMenu = () => {
     const [restaurant, setRestaurant] = useState(null);
     const [liveStatus, setLiveStatus] = useState(null);
     const navigate = useNavigate();
-    const user = JSON.parse(localStorage.getItem("user"));
+    const location = useLocation();
+
+    // A malformed localStorage entry should not blank the whole page.
+    let storedUser = null;
+    try {
+        storedUser = JSON.parse(localStorage.getItem("user"));
+    } catch {
+        storedUser = null;
+    }
+    const user = storedUser;
+    const isLoggedIn = Boolean(user && user.id);
 
     useEffect(() => {
         getRestaurantMenu(id).then(response => setMenu(response.data)).catch(console.error);
-        axios.get(`http://localhost:8080/api/restaurants/${id}`)
+        axios.get(`${API_BASE}/api/restaurants/${id}`)
             .then(response => setRestaurant(response.data))
             .catch(console.error);
         getRestaurantLiveStatus(id).then(response => setLiveStatus(response.data)).catch(console.error);
@@ -54,9 +64,9 @@ const RestaurantMenu = () => {
             alert("This item is currently out of stock");
             return;
         }
-        if (!user) {
-            alert("Please login to order");
-            navigate("/login");
+        if (!isLoggedIn) {
+            // Remember where we were so login can send the user straight back.
+            navigate("/login", { state: { from: location.pathname } });
             return;
         }
 
@@ -261,12 +271,12 @@ const RestaurantMenu = () => {
                                         <div className="d-flex align-items-center justify-content-between">
                                             {/* Quantity Control */}
                                             <div className="btn-group me-2" role="group">
-                                                <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => updateQuantity(item.id, -1)} disabled={!item.inStock || (quantities[item.id] || 1) <= 1}>-</button>
+                                                <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => updateQuantity(item.id, -1)} disabled={!isLoggedIn || !item.inStock || (quantities[item.id] || 1) <= 1}>-</button>
                                                 <span className="btn btn-outline-secondary btn-sm disabled text-dark border-top-0 border-bottom-0">{quantities[item.id] || 1}</span>
-                                                <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => updateQuantity(item.id, 1)} disabled={!item.inStock}>+</button>
+                                                <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => updateQuantity(item.id, 1)} disabled={!isLoggedIn || !item.inStock}>+</button>
                                             </div>
-                                            <button className={`btn ${item.inStock ? 'btn-success' : 'btn-secondary'} flex-grow-1`} onClick={() => handleAddToCart(item)} disabled={!item.inStock} style={{ borderRadius: '8px' }}>
-                                                {item.inStock ? 'Add' : 'Out of Stock'}
+                                            <button className={`btn ${!item.inStock ? 'btn-secondary' : isLoggedIn ? 'btn-success' : 'btn-outline-success'} flex-grow-1`} onClick={() => handleAddToCart(item)} disabled={!item.inStock} style={{ borderRadius: '8px' }}>
+                                                {!item.inStock ? 'Out of Stock' : isLoggedIn ? 'Add' : 'Login to order'}
                                             </button>
                                         </div>
                                     </div>
@@ -330,7 +340,7 @@ const RestaurantMenu = () => {
                                             type="button"
                                             className="btn btn-outline-secondary btn-sm"
                                             onClick={() => updateQuantity(item.id, -1)}
-                                            disabled={!item.inStock || (quantities[item.id] || 1) <= 1}
+                                            disabled={!isLoggedIn || !item.inStock || (quantities[item.id] || 1) <= 1}
                                         >-</button>
                                         <span className="btn btn-outline-secondary btn-sm disabled text-dark border-top-0 border-bottom-0">
                                             {quantities[item.id] || 1}
@@ -339,17 +349,17 @@ const RestaurantMenu = () => {
                                             type="button"
                                             className="btn btn-outline-secondary btn-sm"
                                             onClick={() => updateQuantity(item.id, 1)}
-                                            disabled={!item.inStock}
+                                            disabled={!isLoggedIn || !item.inStock}
                                         >+</button>
                                     </div>
 
                                     <button
-                                        className={`btn ${item.inStock ? 'btn-success' : 'btn-secondary'} flex-grow-1`}
+                                        className={`btn ${!item.inStock ? 'btn-secondary' : isLoggedIn ? 'btn-success' : 'btn-outline-success'} flex-grow-1`}
                                         onClick={() => handleAddToCart(item)}
                                         disabled={!item.inStock}
                                         style={{ borderRadius: '8px' }}
                                     >
-                                        {item.inStock ? 'Add' : 'Out of Stock'}
+                                        {!item.inStock ? 'Out of Stock' : isLoggedIn ? 'Add' : 'Login to order'}
                                     </button>
                                 </div>
                             </div>

@@ -1,6 +1,8 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:8080/api";
+// Override with REACT_APP_API_URL when the backend is not on the default port.
+export const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:8080";
+const API_URL = `${API_BASE}/api`;
 
 const api = axios.create({
     baseURL: API_URL,

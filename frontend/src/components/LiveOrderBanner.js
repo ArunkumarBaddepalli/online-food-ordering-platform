@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_BASE } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import './LiveOrderBanner.css';
 
@@ -17,7 +18,7 @@ const LiveOrderBanner = ({ userId }) => {
 
         const fetchActiveOrders = async () => {
             try {
-                const response = await axios.get(`http://localhost:8080/api/order/user/${userId}/active`);
+                const response = await axios.get(`${API_BASE}/api/order/user/${userId}/active`);
                 setActiveOrders(response.data);
             } catch (error) {
                 console.error('Error fetching active orders:', error);

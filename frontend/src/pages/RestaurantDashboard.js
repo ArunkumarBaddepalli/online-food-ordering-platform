@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { getOnboardingStatus } from "../services/api";
+import { getOnboardingStatus, API_BASE } from "../services/api";
 
 const RestaurantDashboard = () => {
     const navigate = useNavigate();
@@ -75,7 +75,7 @@ const RestaurantDashboard = () => {
                     <Link to={`/restaurant/${onboarding.createdRestaurantId}`} className="btn btn-outline-primary btn-sm">
                         View Menu Page
                     </Link>
-                    <a href={`http://localhost:8080/swagger-ui.html`} target="_blank" rel="noreferrer"
+                    <a href={`${API_BASE}/swagger-ui.html`} target="_blank" rel="noreferrer"
                         className="btn btn-outline-secondary btn-sm">
                         Manage via API (Swagger)
                     </a>

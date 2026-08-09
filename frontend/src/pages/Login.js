@@ -1,27 +1,30 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { login } from "../services/api";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 
 const Login = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const navigate = useNavigate();
+    const location = useLocation();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
             const response = await login({ email, password });
             localStorage.setItem("user", JSON.stringify(response.data));
+
+            // Return to the page that sent us here, otherwise use the role landing page.
+            const cameFrom = location.state?.from;
             const role = response.data.role;
-            if (role === "RESTAURANT_OWNER") {
-                navigate("/restaurant/dashboard");
-            } else if (role === "ADMIN") {
-                navigate("/");
-            } else {
-                navigate("/");
-            }
-            window.location.reload();
+            const destination = cameFrom
+                ? cameFrom
+                : role === "RESTAURANT_OWNER"
+                    ? "/restaurant/dashboard"
+                    : "/";
+
+            // Full reload so components re-read the stored user.
+            window.location.assign(destination);
         } catch (error) {
             console.error("Login failed", error);
             alert("Invalid credentials");

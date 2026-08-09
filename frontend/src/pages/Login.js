@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { login } from "../services/api";
+import { login, saveSession } from "../services/api";
 import { useLocation } from "react-router-dom";
 
 const Login = () => {
@@ -12,15 +12,14 @@ const Login = () => {
         e.preventDefault();
         try {
             const response = await login({ email, password });
-            localStorage.setItem("user", JSON.stringify(response.data));
+            saveSession(response.data);
 
-            // Land on the page that sent us here, otherwise the home page —
-            // for every role. Routing owners straight to the dashboard pushed
-            // them into the onboarding flow and left them unable to order.
-            // Owners reach their dashboard via "My Restaurant" in the navbar.
-            const destination = location.state?.from || "/";
+            // Come back to wherever the user was sent from. The ?next= form is
+            // used when an expired token bounced them out mid-page.
+            const nextParam = new URLSearchParams(location.search).get("next");
+            const destination = nextParam || location.state?.from || "/";
 
-            // Full reload so components re-read the stored user.
+            // Full reload so every component re-reads the new session.
             window.location.assign(destination);
         } catch (error) {
             console.error("Login failed", error);

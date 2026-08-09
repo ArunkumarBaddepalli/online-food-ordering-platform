@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { getCart, getRestaurantLiveStatus, validateCart, updateCartItem, removeCartItem } from "../services/api";
+import { getCart, getRestaurantLiveStatus, validateCart, updateCartItem, removeCartItem , getCurrentUser } from "../services/api";
 import { Link } from "react-router-dom";
 
 const Cart = () => {
     const [cart, setCart] = useState(null);
     const [liveStatus, setLiveStatus] = useState(null);
     const [validation, setValidation] = useState(null);
-    const user = JSON.parse(localStorage.getItem("user"));
+    const user = getCurrentUser();
 
     const fetchCart = useCallback(async () => {
         if (!user) return;

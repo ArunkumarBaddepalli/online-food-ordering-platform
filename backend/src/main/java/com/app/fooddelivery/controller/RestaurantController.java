@@ -5,6 +5,7 @@ import com.app.fooddelivery.model.Restaurant;
 import com.app.fooddelivery.model.RestaurantOperatingHours;
 import com.app.fooddelivery.repository.RestaurantRepository;
 import com.app.fooddelivery.service.RestaurantHoursValidator;
+import com.app.fooddelivery.security.CurrentUser;
 import com.app.fooddelivery.service.RestaurantService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -32,6 +33,9 @@ public class RestaurantController {
     @Autowired
     private RestaurantHoursValidator hoursValidator;
 
+    @Autowired
+    private CurrentUser currentUser;
+
     @GetMapping("/restaurants")
     public ResponseEntity<List<Restaurant>> getAllRestaurants() {
         return ResponseEntity.ok(restaurantService.getAllRestaurants());
@@ -52,6 +56,7 @@ public class RestaurantController {
     /** Turns automatic order acceptance on or off for a restaurant. */
     @PutMapping("/restaurants/{id}/auto-accept")
     public ResponseEntity<?> setAutoAccept(@PathVariable Long id, @RequestParam boolean enabled) {
+        currentUser.requireRestaurantOwner(id);
         return restaurantRepository.findById(id)
                 .map(restaurant -> {
                     restaurant.setAutoAcceptOrders(enabled);
@@ -63,6 +68,7 @@ public class RestaurantController {
     /** The restaurant a given owner account runs, or 404 if they run none. */
     @GetMapping("/restaurants/owned-by/{userId}")
     public ResponseEntity<Restaurant> getRestaurantByOwner(@PathVariable Long userId) {
+        currentUser.requireSelfOrAdmin(userId);
         return restaurantRepository.findByOwnerId(userId)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());

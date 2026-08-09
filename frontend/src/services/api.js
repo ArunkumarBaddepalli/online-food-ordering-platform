@@ -8,6 +8,50 @@ const api = axios.create({
     baseURL: API_URL,
 });
 
+// --- Session handling -------------------------------------------------------
+
+export const getToken = () => localStorage.getItem("token");
+
+export const getCurrentUser = () => {
+    try {
+        return JSON.parse(localStorage.getItem("user"));
+    } catch {
+        return null;
+    }
+};
+
+export const saveSession = ({ token, user }) => {
+    localStorage.setItem("token", token);
+    localStorage.setItem("user", JSON.stringify(user));
+};
+
+export const clearSession = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+};
+
+// Every request carries the token, so the server can tell who is calling.
+api.interceptors.request.use((config) => {
+    const token = getToken();
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
+
+// An expired or missing token means the stored session is useless: clear it
+// and send the user to sign in again, remembering where they were.
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401 && !window.location.pathname.startsWith("/login")) {
+            clearSession();
+            window.location.assign(`/login?next=${encodeURIComponent(window.location.pathname)}`);
+        }
+        return Promise.reject(error);
+    }
+);
+
 // Auth
 export const register = (user) => api.post("/auth/register", user);
 export const login = (user) => api.post("/auth/login", user);

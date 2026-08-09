@@ -2,6 +2,7 @@ package com.app.fooddelivery.controller;
 
 import com.app.fooddelivery.model.SavedAddress;
 import com.app.fooddelivery.repository.SavedAddressRepository;
+import com.app.fooddelivery.security.CurrentUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,11 +19,15 @@ public class AddressController {
     @Autowired
     private SavedAddressRepository savedAddressRepository;
 
+    @Autowired
+    private CurrentUser currentUser;
+
     /**
      * Get all saved addresses for a user
      */
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<SavedAddress>> getUserAddresses(@PathVariable Long userId) {
+        currentUser.requireSelfOrAdmin(userId);
         List<SavedAddress> addresses = savedAddressRepository.findByUserId(userId);
         return ResponseEntity.ok(addresses);
     }
@@ -32,6 +37,7 @@ public class AddressController {
      */
     @GetMapping("/user/{userId}/default")
     public ResponseEntity<SavedAddress> getDefaultAddress(@PathVariable Long userId) {
+        currentUser.requireSelfOrAdmin(userId);
         return savedAddressRepository.findByUserIdAndIsDefaultTrue(userId)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());

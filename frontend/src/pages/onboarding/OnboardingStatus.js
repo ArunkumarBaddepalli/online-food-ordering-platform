@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { getOnboardingStatus, startOnboarding } from "../../services/api";
+import { getOnboardingStatus, startOnboarding , getCurrentUser } from "../../services/api";
 
 const OnboardingStatus = () => {
     const navigate = useNavigate();
-    const user = JSON.parse(localStorage.getItem("user"));
+    const user = getCurrentUser();
     const [onboarding, setOnboarding] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -19,9 +19,9 @@ const OnboardingStatus = () => {
     const handleStartNew = async () => {
         try {
             await startOnboarding(user.id);
-            navigate("/restaurant/onboard");
+            navigate("/partner/onboard");
         } catch {
-            navigate("/restaurant/onboard");
+            navigate("/partner/onboard");
         }
     };
 
@@ -47,7 +47,7 @@ const OnboardingStatus = () => {
                         <div className="fs-1 mb-2">📝</div>
                         <h5>Application Not Submitted</h5>
                         <p className="text-muted">Your application is saved but not yet submitted for review.</p>
-                        <Link to="/restaurant/onboard" className="btn btn-warning">Complete & Submit</Link>
+                        <Link to="/partner/onboard" className="btn btn-warning">Complete & Submit</Link>
                     </div>
                 )}
 
@@ -69,7 +69,7 @@ const OnboardingStatus = () => {
                         {rejectionReason && (
                             <div className="alert alert-warning mt-2">{rejectionReason}</div>
                         )}
-                        <Link to="/restaurant/onboard" className="btn btn-warning w-100 mt-2">Update Documents</Link>
+                        <Link to="/partner/onboard" className="btn btn-warning w-100 mt-2">Update Documents</Link>
                     </div>
                 )}
 
@@ -78,7 +78,7 @@ const OnboardingStatus = () => {
                         <div className="fs-1 mb-2">🎉</div>
                         <h5 className="text-success">Application Approved!</h5>
                         <p className="text-muted">Your restaurant is now live on the platform.</p>
-                        <Link to="/restaurant/dashboard" className="btn btn-success">Go to Dashboard</Link>
+                        <Link to="/partner/dashboard" className="btn btn-success">Go to Dashboard</Link>
                     </div>
                 )}
 

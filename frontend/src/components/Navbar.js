@@ -1,13 +1,14 @@
 import React from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import { getCurrentUser, clearSession } from "../services/api";
 
 const Navbar = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const user = JSON.parse(localStorage.getItem("user"));
+    const user = getCurrentUser();
 
     const handleLogout = () => {
-        localStorage.removeItem("user");
+        clearSession();
         navigate("/login");
     };
 
@@ -54,17 +55,14 @@ const Navbar = () => {
                                     <Link className={`nav-link ${location.pathname === '/profile' ? 'active fw-bold' : ''}`} to="/profile">Profile</Link>
                                 </li>
 
+                                {/* Partner work lives in its own portal. A partner
+                                    account cannot shop, so it only gets a way across. */}
                                 {user.role === "RESTAURANT_OWNER" && (
-                                    <>
-                                        <li className="nav-item">
-                                            <Link className={`nav-link ${location.pathname.startsWith('/restaurant/dashboard') ? 'active fw-bold' : ''}`}
-                                                to="/restaurant/dashboard">My Restaurant</Link>
-                                        </li>
-                                        <li className="nav-item">
-                                            <Link className={`nav-link ${location.pathname.startsWith('/restaurant/onboard') ? 'active fw-bold' : ''}`}
-                                                to="/restaurant/onboard">Onboarding</Link>
-                                        </li>
-                                    </>
+                                    <li className="nav-item">
+                                        <Link className="nav-link text-warning" to="/partner/dashboard">
+                                            Partner Portal →
+                                        </Link>
+                                    </li>
                                 )}
 
                                 {user.role === "ADMIN" && (

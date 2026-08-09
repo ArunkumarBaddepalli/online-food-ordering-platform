@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { placeOrder, getCart, getRestaurantLiveStatus, getUserAddresses, addUserAddress, updateUserAddress, deleteUserAddress, validateDelivery, getPaymentConfig, createRazorpayCheckout, verifyRazorpayPayment } from "../services/api";
+import { placeOrder, getCart, getRestaurantLiveStatus, getUserAddresses, addUserAddress, updateUserAddress, deleteUserAddress, validateDelivery, getPaymentConfig, createRazorpayCheckout, verifyRazorpayPayment , getCurrentUser } from "../services/api";
 import { useNavigate } from "react-router-dom";
 
 import AddressMap from "../components/AddressMap";
@@ -30,7 +30,7 @@ const Checkout = () => {
     const [isCheckingDelivery, setIsCheckingDelivery] = useState(false);
 
     const navigate = useNavigate();
-    const user = JSON.parse(localStorage.getItem("user"));
+    const user = getCurrentUser();
 
     useEffect(() => {
         // Online payment only appears when the server has Razorpay credentials.

@@ -4,6 +4,7 @@ import com.app.fooddelivery.model.User;
 import com.app.fooddelivery.model.UserAddress;
 import com.app.fooddelivery.repository.UserAddressRepository;
 import com.app.fooddelivery.repository.UserRepository;
+import com.app.fooddelivery.security.CurrentUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +19,9 @@ public class UserAddressController {
     private UserAddressRepository userAddressRepository;
 
     @Autowired
+    private CurrentUser currentUser;
+
+    @Autowired
     private UserRepository userRepository;
 
     @Autowired
@@ -25,11 +29,13 @@ public class UserAddressController {
 
     @GetMapping("/{userId}/addresses")
     public ResponseEntity<List<UserAddress>> getUserAddresses(@PathVariable Long userId) {
+        currentUser.requireSelfOrAdmin(userId);
         return ResponseEntity.ok(userAddressRepository.findByUserId(userId));
     }
 
     @PostMapping("/{userId}/addresses")
     public ResponseEntity<UserAddress> addUserAddress(@PathVariable Long userId, @RequestBody UserAddress address) {
+        currentUser.requireSelfOrAdmin(userId);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -41,6 +47,7 @@ public class UserAddressController {
 
     @DeleteMapping("/{userId}/addresses/{addressId}")
     public ResponseEntity<String> deleteUserAddress(@PathVariable Long userId, @PathVariable Long addressId) {
+        currentUser.requireSelfOrAdmin(userId);
         userAddressRepository.deleteById(addressId);
         return ResponseEntity.ok("Address deleted");
     }
@@ -48,6 +55,7 @@ public class UserAddressController {
     @PutMapping("/{userId}/addresses/{addressId}")
     public ResponseEntity<UserAddress> updateUserAddress(@PathVariable Long userId, @PathVariable Long addressId,
             @RequestBody UserAddress addressDetails) {
+        currentUser.requireSelfOrAdmin(userId);
         UserAddress address = userAddressRepository.findById(addressId)
                 .orElseThrow(() -> new RuntimeException("Address not found"));
 

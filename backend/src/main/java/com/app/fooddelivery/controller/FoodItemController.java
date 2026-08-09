@@ -5,6 +5,7 @@ import com.app.fooddelivery.model.FoodItem;
 import com.app.fooddelivery.model.Restaurant;
 import com.app.fooddelivery.repository.FoodItemRepository;
 import com.app.fooddelivery.repository.RestaurantRepository;
+import com.app.fooddelivery.security.CurrentUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,8 +20,12 @@ public class FoodItemController {
     @Autowired
     private RestaurantRepository restaurantRepository;
 
+    @Autowired
+    private CurrentUser currentUser;
+
     @PostMapping
     public ResponseEntity<FoodItem> createFoodItem(@RequestBody FoodItem foodItem, @RequestParam Long restaurantId) {
+        currentUser.requireRestaurantOwner(restaurantId);
         Restaurant restaurant = restaurantRepository.findById(restaurantId)
                 .orElseThrow(() -> new RuntimeException("Restaurant not found"));
         foodItem.setRestaurant(restaurant);
@@ -29,6 +34,7 @@ public class FoodItemController {
 
     @PutMapping("/{id}")
     public ResponseEntity<FoodItem> updateFoodItem(@PathVariable Long id, @RequestBody FoodItem updatedFood) {
+        requireOwnMenuItem(id);
         FoodItem food = foodItemRepository.findById(id).orElseThrow(() -> new RuntimeException("Food item not found"));
         food.setName(updatedFood.getName());
         food.setDescription(updatedFood.getDescription());
@@ -39,6 +45,7 @@ public class FoodItemController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteFoodItem(@PathVariable Long id) {
+        requireOwnMenuItem(id);
         foodItemRepository.deleteById(id);
         return ResponseEntity.ok("Food item deleted");
     }
@@ -49,6 +56,7 @@ public class FoodItemController {
      */
     @PutMapping("/{id}/stock")
     public ResponseEntity<?> updateStock(@PathVariable Long id, @RequestBody StockUpdateRequest req) {
+        requireOwnMenuItem(id);
         try {
             FoodItem food = foodItemRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Food item not found"));
@@ -71,6 +79,7 @@ public class FoodItemController {
      */
     @PutMapping("/{id}/mark-oos")
     public ResponseEntity<?> markOOS(@PathVariable Long id, @RequestParam String reason) {
+        requireOwnMenuItem(id);
         try {
             FoodItem food = foodItemRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Food item not found"));
@@ -89,6 +98,7 @@ public class FoodItemController {
      */
     @PutMapping("/{id}/mark-available")
     public ResponseEntity<?> markAvailable(@PathVariable Long id) {
+        requireOwnMenuItem(id);
         try {
             FoodItem food = foodItemRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Food item not found"));
@@ -99,5 +109,13 @@ public class FoodItemController {
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+
+    /** A menu item may only be touched by the owner of its restaurant. */
+    private void requireOwnMenuItem(Long foodItemId) {
+        Long restaurantId = foodItemRepository.findById(foodItemId)
+                .map(f -> f.getRestaurant() == null ? null : f.getRestaurant().getId())
+                .orElseThrow(() -> new RuntimeException("Food item not found"));
+        currentUser.requireRestaurantOwner(restaurantId);
     }
 }

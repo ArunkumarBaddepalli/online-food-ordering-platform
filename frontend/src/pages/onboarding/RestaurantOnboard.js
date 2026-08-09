@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getOnboardingStatus, startOnboarding } from "../../services/api";
+import { getOnboardingStatus, startOnboarding , getCurrentUser } from "../../services/api";
 import OnboardStep1BasicInfo from "./steps/OnboardStep1BasicInfo";
 import OnboardStep2Location from "./steps/OnboardStep2Location";
 import OnboardStep3Hours from "./steps/OnboardStep3Hours";
@@ -19,7 +19,7 @@ const defaultHours = DAYS.map((day) => ({
 
 const RestaurantOnboard = () => {
     const navigate = useNavigate();
-    const user = JSON.parse(localStorage.getItem("user"));
+    const user = getCurrentUser();
 
     const [onboardingId, setOnboardingId] = useState(null);
     const [currentStep, setCurrentStep] = useState(1);
@@ -51,9 +51,9 @@ const RestaurantOnboard = () => {
             try {
                 const res = await getOnboardingStatus(user.id);
                 const ob = res.data;
-                if (ob.status === "APPROVED") { navigate("/restaurant/dashboard"); return; }
+                if (ob.status === "APPROVED") { navigate("/partner/dashboard"); return; }
                 if (ob.status === "PENDING_REVIEW" || ob.status === "SUBMITTED") {
-                    navigate("/restaurant/onboard/status"); return;
+                    navigate("/partner/onboard/status"); return;
                 }
                 setOnboardingId(ob.onboardingId);
                 setCurrentStep(ob.currentStep || 1);
@@ -192,7 +192,7 @@ const RestaurantOnboard = () => {
                         documents={documents} bankDetails={bankDetails}
                         onboardingId={onboardingId}
                         onEditStep={setCurrentStep}
-                        onSubmitSuccess={() => navigate("/restaurant/onboard/status")}
+                        onSubmitSuccess={() => navigate("/partner/onboard/status")}
                     />
                 )}
             </div>

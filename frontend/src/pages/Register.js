@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { register, startOnboarding } from "../services/api";
+import { register, startOnboarding, saveSession } from "../services/api";
 import { useNavigate } from "react-router-dom";
 
 const Register = () => {
@@ -17,17 +17,20 @@ const Register = () => {
         try {
             const role = isPartner ? "RESTAURANT_OWNER" : "USER";
             const response = await register({ name, email, password, address, role });
-            if (isPartner && response.data) {
-                localStorage.setItem("user", JSON.stringify(response.data));
+
+            // Registering signs you in, so the token must be stored before any
+            // follow-up call is made.
+            saveSession(response.data);
+
+            if (isPartner) {
                 try {
-                    await startOnboarding(response.data.id);
+                    await startOnboarding(response.data.user.id);
                 } catch (err) {
-                    // onboarding may already exist
+                    // An application may already exist for this account.
                 }
-                navigate("/restaurant/onboard");
+                window.location.assign("/partner/onboard");
             } else {
-                alert("Registration successful! Please login.");
-                navigate("/login");
+                window.location.assign("/");
             }
         } catch (error) {
             console.error("Registration failed", error);

@@ -1,6 +1,8 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar";
+import PartnerNavbar from "./components/PartnerNavbar";
+import RequireAuth from "./components/RequireAuth";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Home from "./pages/Home";
@@ -14,40 +16,81 @@ import RestaurantOnboard from "./pages/onboarding/RestaurantOnboard";
 import OnboardingStatus from "./pages/onboarding/OnboardingStatus";
 import RestaurantDashboard from "./pages/RestaurantDashboard";
 import LiveOrderBanner from "./components/LiveOrderBanner";
+import { getCurrentUser } from "./services/api";
 import "./App.css";
 
-function App() {
-  // A malformed entry should not take down the whole app shell.
-  let user = null;
-  try {
-    user = JSON.parse(localStorage.getItem("user"));
-  } catch {
-    user = null;
-  }
+const OWNER = ["RESTAURANT_OWNER", "ADMIN"];
+
+/**
+ * The customer site and the partner portal are separate products that happen
+ * to share a deployment: different audience, different navigation, different
+ * pages. The URL prefix decides which shell you get.
+ */
+function Shell() {
+  const location = useLocation();
+  const isPartnerArea = location.pathname.startsWith("/partner");
+  const user = getCurrentUser();
 
   return (
-    <Router>
-      <Navbar />
+    <>
+      {isPartnerArea ? <PartnerNavbar /> : <Navbar />}
+
       <div className="container mt-4">
         <Routes>
+          {/* --- Customer site --- */}
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/restaurant/:id" element={<RestaurantMenu />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/orders" element={<OrderHistory />} />
-          <Route path="/orders/:orderId" element={<OrderTracking />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/restaurant/onboard" element={<RestaurantOnboard />} />
-          <Route path="/restaurant/onboard/status" element={<OnboardingStatus />} />
-          <Route path="/restaurant/dashboard" element={<RestaurantDashboard />} />
+          <Route path="/cart" element={<RequireAuth><Cart /></RequireAuth>} />
+          <Route path="/checkout" element={<RequireAuth><Checkout /></RequireAuth>} />
+          <Route path="/orders" element={<RequireAuth><OrderHistory /></RequireAuth>} />
+          <Route path="/orders/:orderId" element={<RequireAuth><OrderTracking /></RequireAuth>} />
+          <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
+
+          {/* --- Partner portal --- */}
+          <Route path="/partner" element={<Navigate to="/partner/dashboard" replace />} />
+          <Route
+            path="/partner/dashboard"
+            element={<RequireAuth roles={OWNER}><RestaurantDashboard /></RequireAuth>}
+          />
+          <Route
+            path="/partner/onboard"
+            element={<RequireAuth roles={OWNER}><RestaurantOnboard /></RequireAuth>}
+          />
+          <Route
+            path="/partner/onboard/status"
+            element={<RequireAuth roles={OWNER}><OnboardingStatus /></RequireAuth>}
+          />
+
+          {/* Old owner URLs sat under /restaurant/, which also means a customer
+              menu page. Kept as redirects so existing links still work. */}
+          <Route path="/restaurant/dashboard" element={<Navigate to="/partner/dashboard" replace />} />
+          <Route path="/restaurant/onboard" element={<Navigate to="/partner/onboard" replace />} />
+          <Route path="/restaurant/onboard/status" element={<Navigate to="/partner/onboard/status" replace />} />
+
+          <Route
+            path="*"
+            element={
+              <div className="text-center mt-5">
+                <h4>Page not found</h4>
+                <a className="btn btn-outline-secondary mt-2" href="/">Back to home</a>
+              </div>
+            }
+          />
         </Routes>
       </div>
 
-      {/* Floating live-order tracker. The component existed but was never
-          mounted, so it had never rendered. */}
-      {user?.id && <LiveOrderBanner userId={user.id} />}
+      {/* Live order tracking belongs to the customer site only. */}
+      {!isPartnerArea && user?.id && <LiveOrderBanner userId={user.id} />}
+    </>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <Shell />
     </Router>
   );
 }

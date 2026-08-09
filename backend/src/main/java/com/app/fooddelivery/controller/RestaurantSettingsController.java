@@ -2,6 +2,7 @@ package com.app.fooddelivery.controller;
 
 import com.app.fooddelivery.model.Restaurant;
 import com.app.fooddelivery.repository.RestaurantRepository;
+import com.app.fooddelivery.security.CurrentUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +20,9 @@ public class RestaurantSettingsController {
     @Autowired
     private RestaurantRepository restaurantRepository;
 
+    @Autowired
+    private CurrentUser currentUser;
+
     // Get restaurant settings
     @GetMapping("/{id}/settings")
     public ResponseEntity<Restaurant> getRestaurantSettings(@PathVariable Long id) {
@@ -32,6 +36,7 @@ public class RestaurantSettingsController {
     public ResponseEntity<Restaurant> updateRestaurantSettings(
             @PathVariable Long id,
             @RequestBody Restaurant updatedRestaurant) {
+        currentUser.requireRestaurantOwner(id);
         Restaurant restaurant = restaurantRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Restaurant not found"));
 

@@ -1,6 +1,7 @@
 package com.app.fooddelivery.controller;
 
 import com.app.fooddelivery.model.Order;
+import com.app.fooddelivery.security.CurrentUser;
 import com.app.fooddelivery.service.OrderService;
 import com.app.fooddelivery.service.OrderETAService;
 import com.app.fooddelivery.repository.OrderRepository;
@@ -29,6 +30,9 @@ public class OrderController {
     @Autowired
     private com.app.fooddelivery.service.OrderStatusFlow statusFlow;
 
+    @Autowired
+    private CurrentUser currentUser;
+
     @PostMapping("/place")
     public ResponseEntity<?> placeOrder(
             @RequestParam Long userId,
@@ -36,6 +40,7 @@ public class OrderController {
             @RequestParam(required = false) String scheduledTime,
             @RequestParam(required = false, defaultValue = "DELIVERY") String orderType,
             @RequestParam(required = false, defaultValue = "COD") String paymentMethod) {
+        currentUser.requireSelfOrAdmin(userId);
         try {
             LocalDateTime scheduledDateTime = null;
             if (scheduledTime != null && !scheduledTime.isEmpty()) {
@@ -58,17 +63,23 @@ public class OrderController {
 
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<Order>> getUserOrders(@PathVariable Long userId) {
+        currentUser.requireSelfOrAdmin(userId);
         return ResponseEntity.ok(orderRepository.findByUserId(userId));
     }
 
     @GetMapping("/{orderId}")
     public ResponseEntity<Order> getOrderDetails(@PathVariable Long orderId) {
-        return ResponseEntity
-                .ok(orderRepository.findById(orderId).orElseThrow(() -> new RuntimeException("Order not found")));
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+        currentUser.requireOrderParticipant(order);
+        return ResponseEntity.ok(order);
     }
 
     @PutMapping("/{orderId}/status")
     public ResponseEntity<?> updateOrderStatus(@PathVariable Long orderId, @RequestParam String status) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+        currentUser.requireOrderRestaurantOwner(order);
         try {
             return ResponseEntity.ok(orderService.advanceStatus(orderId, status));
         } catch (RuntimeException e) {
@@ -82,6 +93,7 @@ public class OrderController {
      */
     @GetMapping("/restaurant/{restaurantId}")
     public ResponseEntity<List<Map<String, Object>>> getRestaurantOrders(@PathVariable Long restaurantId) {
+        currentUser.requireRestaurantOwner(restaurantId);
         List<Map<String, Object>> result = orderRepository
                 .findByRestaurantIdOrderByOrderDateDesc(restaurantId).stream()
                 .map(order -> {
@@ -109,6 +121,9 @@ public class OrderController {
      */
     @PutMapping("/{orderId}/cancel")
     public ResponseEntity<?> cancelOrder(@PathVariable Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+        currentUser.requireOrderParticipant(order);
         try {
             return ResponseEntity.ok(orderService.cancelOrder(orderId));
         } catch (RuntimeException e) {
@@ -118,6 +133,7 @@ public class OrderController {
 
     @GetMapping("/user/{userId}/active")
     public ResponseEntity<List<Map<String, Object>>> getActiveOrders(@PathVariable Long userId) {
+        currentUser.requireSelfOrAdmin(userId);
         List<Order> activeOrders = orderRepository.findByUserId(userId).stream()
                 .filter(order -> !order.getStatus().equals("DELIVERED") && !order.getStatus().equals("CANCELLED"))
                 .toList();

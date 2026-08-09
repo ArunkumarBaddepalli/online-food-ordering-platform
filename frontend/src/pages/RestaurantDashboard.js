@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { getOnboardingStatus, getRestaurantOwnedBy, setAutoAccept, API_BASE } from "../services/api";
+import { getOnboardingStatus, getRestaurantOwnedBy, setAutoAccept, API_BASE , getCurrentUser } from "../services/api";
 import OwnerOrdersPanel from "../components/OwnerOrdersPanel";
 
 const RestaurantDashboard = () => {
     const navigate = useNavigate();
-    const user = JSON.parse(localStorage.getItem("user"));
+    const user = getCurrentUser();
     const [onboarding, setOnboarding] = useState(null);
     const [restaurant, setRestaurant] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -49,7 +49,7 @@ const RestaurantDashboard = () => {
                         ? "Your application is still being processed."
                         : "You have not applied to list a restaurant yet."}
                 </p>
-                <Link className="btn btn-primary" to={onboarding ? "/restaurant/onboard/status" : "/restaurant/onboard"}>
+                <Link className="btn btn-primary" to={onboarding ? "/partner/onboard/status" : "/partner/onboard"}>
                     {onboarding ? "View application status" : "Start your application"}
                 </Link>
             </div>

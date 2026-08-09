@@ -76,7 +76,8 @@ public class FoodItemController {
                     .orElseThrow(() -> new RuntimeException("Food item not found"));
             food.setInStock(false);
             food.setOosReason(reason);
-            food.setStockResetType("MANUAL");
+            // stockResetType is left alone: overwriting it here used to wipe a
+            // DAILY item's auto-restock config the first time it sold out.
             return ResponseEntity.ok(foodItemRepository.save(food));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());

@@ -72,7 +72,7 @@ const Cart = () => {
         );
     }
 
-    const total = cart.items.reduce((acc, item) => acc + item.totalPrice, 0);
+    const total = cart.items.reduce((acc, item) => acc + (item.totalPrice ?? 0), 0);
     const restaurant = cart.items[0].foodItem.restaurant;
     const hasOOS = validation && !validation.valid;
     const canCheckout = !hasOOS && (liveStatus ? (liveStatus.canAcceptOrders || liveStatus.acceptsScheduledOrders) : true);
@@ -160,7 +160,7 @@ const Cart = () => {
                                     {item.selectedModifiers?.length > 0 && (
                                         <ul className="small text-muted mb-0 ps-3 mt-1">
                                             {item.selectedModifiers.map((mod, idx) => (
-                                                <li key={idx}>{mod.modifier.name} (+${mod.modifier.priceAdjustment.toFixed(2)})</li>
+                                                <li key={idx}>{mod.modifier.name} (+${(mod.modifier?.priceAdjustment ?? 0).toFixed(2)})</li>
                                             ))}
                                         </ul>
                                     )}
@@ -177,7 +177,7 @@ const Cart = () => {
                                             disabled={item.quantity >= item.foodItem.stockQuantity}>+</button>
                                     </div>
                                 </td>
-                                <td>${item.totalPrice.toFixed(2)}</td>
+                                <td>${(item.totalPrice ?? 0).toFixed(2)}</td>
                                 <td>
                                     <button className="btn btn-danger btn-sm"
                                         onClick={() => handleRemoveItem(item.id)}>Remove</button>

@@ -37,6 +37,9 @@ public class GeocodingService {
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
             conn.setRequestProperty("User-Agent", "FoodDeliveryApp/1.0");
+            // Without these the request can hang forever and block checkout.
+            conn.setConnectTimeout(3000);
+            conn.setReadTimeout(5000);
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
             StringBuilder response = new StringBuilder();

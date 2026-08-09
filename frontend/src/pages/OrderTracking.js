@@ -105,13 +105,13 @@ function OrderTracking() {
                     {order.orderItems?.map((item, index) => (
                         <div key={index} className="order-item">
                             <span>{item.foodItem?.name || 'Item'} x{item.quantity}</span>
-                            <span>${item.price.toFixed(2)}</span>
+                            <span>${(item.price ?? 0).toFixed(2)}</span>
                         </div>
                     ))}
 
                     <div className="order-summary">
                         <p><strong>Delivery Address:</strong> {order.deliveryAddress}</p>
-                        <p className="total"><strong>Total:</strong> ${order.totalAmount.toFixed(2)}</p>
+                        <p className="total"><strong>Total:</strong> ${(order.totalAmount ?? 0).toFixed(2)}</p>
                     </div>
                 </div>
             </div>

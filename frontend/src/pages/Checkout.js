@@ -459,7 +459,7 @@ const Checkout = () => {
                                         <div className="mt-2 alert alert-danger py-2 px-3 small">
                                             <strong>❌ Delivery Not Available</strong>
                                             <div className="mt-1">{validationResult.message}</div>
-                                            {validationResult.distanceKm !== undefined && <div className="mt-1 fw-bold">📏 Distance: {validationResult.distanceKm.toFixed(2)} km (Max: {validationResult.maxRadiusKm} km)</div>}
+                                            {validationResult.distanceKm !== undefined && <div className="mt-1 fw-bold">📏 Distance: {(validationResult.distanceKm ?? 0).toFixed(2)} km (Max: {validationResult.maxRadiusKm} km)</div>}
                                         </div>
                                     )}
                                 </>

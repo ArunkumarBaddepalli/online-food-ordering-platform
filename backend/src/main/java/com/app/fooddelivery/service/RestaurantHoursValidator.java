@@ -8,20 +8,36 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.util.Locale;
 
 @Service
 public class RestaurantHoursValidator {
 
+    /**
+     * Formatters are pinned to Locale.US and made case-insensitive on purpose.
+     * Without the locale, "11:00 PM" fails to parse under locales such as en_IN
+     * whose CLDR data uses lowercase am/pm — and an unparsed time silently made
+     * every restaurant look permanently open.
+     */
+    private static final DateTimeFormatter[] TIME_FORMATS = {
+            caseInsensitive("hh:mm a"),
+            caseInsensitive("h:mm a"),
+            caseInsensitive("HH:mm"),
+            caseInsensitive("H:mm")
+    };
+
+    private static DateTimeFormatter caseInsensitive(String pattern) {
+        return new DateTimeFormatterBuilder()
+                .parseCaseInsensitive()
+                .appendPattern(pattern)
+                .toFormatter(Locale.US);
+    }
+
     private LocalTime parseTime(String timeStr) {
         if (timeStr == null || timeStr.trim().isEmpty())
             return null;
-        DateTimeFormatter[] formatters = {
-                DateTimeFormatter.ofPattern("hh:mm a"),
-                DateTimeFormatter.ofPattern("h:mm a"),
-                DateTimeFormatter.ofPattern("HH:mm"),
-                DateTimeFormatter.ofPattern("H:mm")
-        };
-        for (DateTimeFormatter formatter : formatters) {
+        for (DateTimeFormatter formatter : TIME_FORMATS) {
             try {
                 return LocalTime.parse(timeStr.trim(), formatter);
             } catch (Exception ignored) {
@@ -34,9 +50,10 @@ public class RestaurantHoursValidator {
         if (open == null || close == null) return true;
         if (close.isBefore(open)) {
             // Crosses midnight
-            return time.isAfter(open) || time.isBefore(close);
+            return !time.isBefore(open) || time.isBefore(close);
         }
-        return time.isAfter(open) && time.isBefore(close);
+        // Inclusive of the opening minute, so 10:00 counts as open at 10:00.
+        return !time.isBefore(open) && time.isBefore(close);
     }
 
     /**
@@ -94,12 +111,6 @@ public class RestaurantHoursValidator {
         for (int i = 1; i <= 7; i++) {
             LocalDate date = LocalDate.now().plusDays(i);
             String dayName = date.getDayOfWeek().name();
-            restaurant.getOperatingHours().stream()
-                    .filter(h -> dayName.equals(h.getDayOfWeek()) && Boolean.TRUE.equals(h.getIsOpen()))
-                    .findFirst()
-                    .ifPresent(h -> {
-                        // return would not work here from lambda; handled below
-                    });
             java.util.Optional<RestaurantOperatingHours> found = restaurant.getOperatingHours().stream()
                     .filter(h -> dayName.equals(h.getDayOfWeek()) && Boolean.TRUE.equals(h.getIsOpen()))
                     .findFirst();
@@ -176,7 +187,7 @@ public class RestaurantHoursValidator {
             return new ValidationResult(true, "Order can be placed");
         }
 
-        if (!restaurant.getAcceptsScheduledOrders()) {
+        if (!Boolean.TRUE.equals(restaurant.getAcceptsScheduledOrders())) {
             return new ValidationResult(false, "Restaurant does not accept scheduled orders");
         }
 

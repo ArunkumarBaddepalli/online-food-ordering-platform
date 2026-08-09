@@ -23,13 +23,14 @@ public class Order {
 
     private LocalDateTime orderDate;
     private LocalDateTime scheduledDeliveryTime; // For scheduled orders
+    private LocalDateTime estimatedDeliveryAt; // Fixed target so the ETA counts down
     private Boolean isScheduled = false; // Whether this is a scheduled order
 
     @Enumerated(EnumType.STRING)
     private OrderType orderType;
 
     private Double totalAmount;
-    private String status; // PENDING, CONFIRMED, OUT_FOR_DELIVERY, DELIVERED, CANCELLED
+    private String status; // PLACED, CONFIRMED, PREPARING, OUT_FOR_DELIVERY, DELIVERED, CANCELLED
     private String deliveryAddress;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)

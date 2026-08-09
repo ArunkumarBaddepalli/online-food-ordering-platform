@@ -53,7 +53,7 @@ public class RestaurantSettingsController {
         Restaurant restaurant = restaurantRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Restaurant not found"));
 
-        if (!restaurant.getAcceptsScheduledOrders()) {
+        if (!Boolean.TRUE.equals(restaurant.getAcceptsScheduledOrders())) {
             return ResponseEntity.ok(new ArrayList<>());
         }
 
@@ -67,6 +67,9 @@ public class RestaurantSettingsController {
 
     private List<String> generateTimeSlots(String openingTime, String closingTime, Integer slotDuration) {
         List<String> slots = new ArrayList<>();
+        // A zero or negative step would never advance the loop below and would
+        // hang the request thread.
+        int step = (slotDuration == null || slotDuration <= 0) ? 30 : slotDuration;
         // Supporters formats: "11:00 AM", "11:00", "23:00"
         DateTimeFormatter[] formatters = {
                 DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US),
@@ -103,7 +106,7 @@ public class RestaurantSettingsController {
                     if (slotTime.isAfter(now.plusMinutes(30))) {
                         slots.add(slotTime.toString());
                     }
-                    slotTime = slotTime.plusMinutes(slotDuration);
+                    slotTime = slotTime.plusMinutes(step);
                 }
             }
         } catch (Exception e) {

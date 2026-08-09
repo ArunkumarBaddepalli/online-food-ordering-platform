@@ -1,8 +1,6 @@
 package com.app.fooddelivery.service;
 
 import com.app.fooddelivery.model.Order;
-import com.app.fooddelivery.model.Restaurant;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -15,14 +13,12 @@ import java.time.temporal.ChronoUnit;
 @Service
 public class OrderETAService {
 
-    @Autowired
-    private DistanceCalculationService distanceCalculationService;
-
-    // Average times in minutes
+    // Fallback estimates in minutes, used only for orders placed before
+    // estimatedDeliveryAt existed.
     private static final int PREP_TIME_PLACED = 25; // Order just placed
     private static final int PREP_TIME_CONFIRMED = 20; // Restaurant confirmed
     private static final int PREP_TIME_PREPARING = 15; // Currently preparing
-    private static final double DELIVERY_SPEED_KM_PER_MIN = 0.5; // 30 km/h average
+    private static final int PREP_TIME_OUT_FOR_DELIVERY = 10; // On the way
 
     /**
      * Calculate estimated time of arrival for an order.
@@ -32,60 +28,58 @@ public class OrderETAService {
      */
     public ETAResult calculateETA(Order order) {
         LocalDateTime now = LocalDateTime.now();
-        int minutesRemaining = 0;
-        String statusMessage = "";
+        String status = order.getStatus() == null ? "" : order.getStatus();
 
-        switch (order.getStatus()) {
+        String statusMessage;
+        int fallbackMinutes;
+
+        switch (status) {
             case "PLACED":
             case "WAITING":
-                minutesRemaining = PREP_TIME_PLACED;
+                fallbackMinutes = PREP_TIME_PLACED;
                 statusMessage = "Order received, awaiting confirmation";
                 break;
 
             case "CONFIRMED":
             case "RECEIVED":
-                minutesRemaining = PREP_TIME_CONFIRMED;
+                fallbackMinutes = PREP_TIME_CONFIRMED;
                 statusMessage = "Restaurant is preparing your order";
                 break;
 
             case "PREPARING":
-                minutesRemaining = PREP_TIME_PREPARING;
+                fallbackMinutes = PREP_TIME_PREPARING;
                 statusMessage = "Your order is being prepared";
                 break;
 
             case "OUT_FOR_DELIVERY":
-                // Calculate based on distance
-                if (order.getRestaurant() != null &&
-                        order.getRestaurant().getLatitude() != null &&
-                        order.getRestaurant().getLongitude() != null) {
-
-                    // For simplicity, assume delivery address is geocoded
-                    // In real implementation, you'd geocode the delivery address
-                    minutesRemaining = 10; // Default delivery time
-                    statusMessage = "Your order is on the way";
-                } else {
-                    minutesRemaining = 10;
-                    statusMessage = "Your order is on the way";
-                }
+                fallbackMinutes = PREP_TIME_OUT_FOR_DELIVERY;
+                statusMessage = "Your order is on the way";
                 break;
 
             case "DELIVERED":
-                minutesRemaining = 0;
-                statusMessage = "Order delivered";
-                break;
+                return new ETAResult(0, order.getEstimatedDeliveryAt(), "Order delivered");
 
             case "CANCELLED":
-                minutesRemaining = 0;
-                statusMessage = "Order cancelled";
-                break;
+                return new ETAResult(0, order.getEstimatedDeliveryAt(), "Order cancelled");
 
             default:
-                minutesRemaining = 30;
+                fallbackMinutes = 30;
                 statusMessage = "Processing your order";
         }
 
-        LocalDateTime estimatedTime = now.plusMinutes(minutesRemaining);
-        return new ETAResult(minutesRemaining, estimatedTime, statusMessage);
+        // Count down towards the target stored when the order was placed.
+        // Older orders have no target, so fall back to the per-status estimate.
+        LocalDateTime target = order.getEstimatedDeliveryAt();
+        if (target == null) {
+            target = now.plusMinutes(fallbackMinutes);
+        }
+
+        long minutesRemaining = ChronoUnit.MINUTES.between(now, target);
+        if (minutesRemaining < 0) {
+            minutesRemaining = 0;
+        }
+
+        return new ETAResult((int) minutesRemaining, target, statusMessage);
     }
 
     /**

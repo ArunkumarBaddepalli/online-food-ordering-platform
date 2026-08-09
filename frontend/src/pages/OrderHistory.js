@@ -133,7 +133,7 @@ function OrderHistory() {
                             </div>
                             <p className="order-date">{new Date(order.orderDate).toLocaleDateString()}</p>
                             <p className="order-items">{order.orderItems?.length || 0} items</p>
-                            <p className="order-total">${order.totalAmount.toFixed(2)}</p>
+                            <p className="order-total">${(order.totalAmount ?? 0).toFixed(2)}</p>
                         </div>
                     ))
                 )}

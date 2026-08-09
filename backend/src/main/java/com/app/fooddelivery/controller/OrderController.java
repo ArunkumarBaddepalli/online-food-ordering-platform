@@ -63,10 +63,20 @@ public class OrderController {
                 .ok(orderRepository.findById(orderId).orElseThrow(() -> new RuntimeException("Order not found")));
     }
 
+    /** Statuses an order is allowed to hold. */
+    private static final List<String> VALID_STATUSES = List.of(
+            "PLACED", "CONFIRMED", "PREPARING", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED");
+
     @PutMapping("/{orderId}/status")
-    public ResponseEntity<Order> updateOrderStatus(@PathVariable Long orderId, @RequestParam String status) {
+    public ResponseEntity<?> updateOrderStatus(@PathVariable Long orderId, @RequestParam String status) {
+        String newStatus = status == null ? "" : status.trim().toUpperCase();
+        if (!VALID_STATUSES.contains(newStatus)) {
+            return ResponseEntity.badRequest()
+                    .body("Invalid status. Must be one of: " + String.join(", ", VALID_STATUSES));
+        }
+
         Order order = orderRepository.findById(orderId).orElseThrow(() -> new RuntimeException("Order not found"));
-        order.setStatus(status);
+        order.setStatus(newStatus);
         return ResponseEntity.ok(orderRepository.save(order));
     }
 

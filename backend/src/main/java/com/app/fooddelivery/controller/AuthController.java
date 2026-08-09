@@ -14,16 +14,20 @@ public class AuthController {
     private UserService userService;
 
     @PostMapping("/register")
-    public ResponseEntity<User> register(@RequestBody User user) {
-        return ResponseEntity.ok(userService.registerUser(user));
+    public ResponseEntity<?> register(@RequestBody User user) {
+        try {
+            return ResponseEntity.ok(userService.registerUser(user));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @PostMapping("/login")
-    public ResponseEntity<User> login(@RequestBody User loginRequest) {
+    public ResponseEntity<?> login(@RequestBody User loginRequest) {
         User user = userService.loginUser(loginRequest.getEmail(), loginRequest.getPassword());
         if (user != null) {
             return ResponseEntity.ok(user);
         }
-        return ResponseEntity.status(401).build();
+        return ResponseEntity.status(401).body("Invalid email or password");
     }
 }

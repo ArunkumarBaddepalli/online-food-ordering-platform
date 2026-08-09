@@ -16,8 +16,11 @@ public class OrderItemModifier {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // Without this the JSON serialiser loops OrderItem -> selectedModifiers ->
+    // orderItem -> ... and any order containing modifiers fails to render.
     @ManyToOne
     @JoinColumn(name = "order_item_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private OrderItem orderItem;
 
     @ManyToOne

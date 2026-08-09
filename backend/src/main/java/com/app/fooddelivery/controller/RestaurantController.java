@@ -187,15 +187,18 @@ public class RestaurantController {
         List<String> slots = new ArrayList<>();
         String openTime = todayHours != null ? todayHours.getOpenTime() : restaurant.getOpeningTime();
         String closeTime = todayHours != null ? todayHours.getCloseTime() : restaurant.getClosingTime();
-        Integer slotDuration = restaurant.getSlotDurationMinutes() != null ? restaurant.getSlotDurationMinutes() : 30;
+        // A zero or negative step would never advance the loop below and would
+        // hang the request thread.
+        Integer configured = restaurant.getSlotDurationMinutes();
+        int slotDuration = (configured == null || configured <= 0) ? 30 : configured;
 
         if (openTime == null || closeTime == null) return slots;
 
         DateTimeFormatter[] formatters = {
-                DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US),
-                DateTimeFormatter.ofPattern("hh:mm a", java.util.Locale.US),
-                DateTimeFormatter.ofPattern("HH:mm", java.util.Locale.US),
-                DateTimeFormatter.ofPattern("H:mm", java.util.Locale.US)
+                caseInsensitive("h:mm a"),
+                caseInsensitive("hh:mm a"),
+                caseInsensitive("HH:mm"),
+                caseInsensitive("H:mm")
         };
 
         try {
@@ -222,6 +225,14 @@ public class RestaurantController {
         }
 
         return slots;
+    }
+
+    /** Locale-pinned and case-insensitive so "11:00 PM" and "11:00 pm" both parse. */
+    private static DateTimeFormatter caseInsensitive(String pattern) {
+        return new java.time.format.DateTimeFormatterBuilder()
+                .parseCaseInsensitive()
+                .appendPattern(pattern)
+                .toFormatter(java.util.Locale.US);
     }
 
     private LocalTime parseTime(String timeStr, DateTimeFormatter[] formatters) {

@@ -5,6 +5,7 @@ import com.app.fooddelivery.model.*;
 import com.app.fooddelivery.repository.CartRepository;
 import com.app.fooddelivery.repository.FoodItemRepository;
 import com.app.fooddelivery.repository.OrderRepository;
+import com.app.fooddelivery.repository.PaymentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +26,12 @@ public class OrderService {
 
     @Autowired
     private FoodItemRepository foodItemRepository;
+
+    @Autowired
+    private PaymentRepository paymentRepository;
+
+    /** Minutes from order placement to expected delivery, used for the tracking countdown. */
+    private static final int DEFAULT_DELIVERY_MINUTES = 35;
 
     @Autowired
     private RestaurantHoursValidator hoursValidator;
@@ -54,10 +61,6 @@ public class OrderService {
         }
     }
 
-    public Order placeOrder(Long userId, String deliveryAddress, OrderType orderType) {
-        return placeOrder(userId, deliveryAddress, null, orderType);
-    }
-
     @Transactional
     public Order placeOrder(Long userId, String deliveryAddress, LocalDateTime scheduledTime, OrderType orderType) {
         Cart cart = cartRepository.findByUserId(userId).orElseThrow(() -> new RuntimeException("Cart not found"));
@@ -83,10 +86,11 @@ public class OrderService {
                         restaurant.getLatitude(), restaurant.getLongitude(),
                         result.getLatitude(), result.getLongitude());
 
-                if (distance > restaurant.getDeliveryRadiusKm()) {
+                double radiusKm = restaurant.getDeliveryRadiusKm() == null ? 10.0 : restaurant.getDeliveryRadiusKm();
+                if (distance > radiusKm) {
                     throw new RuntimeException(
                             String.format("Delivery address is out of range. Distance: %.2f km. Max: %.2f km",
-                                    distance, restaurant.getDeliveryRadiusKm()));
+                                    distance, radiusKm));
                 }
             }
         }
@@ -117,26 +121,31 @@ public class OrderService {
             FoodItem foodItem = foodItemRepository.findByIdWithLock(cartItem.getFoodItem().getId())
                     .orElseThrow(() -> new RuntimeException("Food item not found: " + cartItem.getFoodItem().getName()));
 
-            if (Boolean.FALSE.equals(foodItem.getInStock())
-                    || foodItem.getStockQuantity() < cartItem.getQuantity()) {
-                throw new RuntimeException("Insufficient stock for item: " + foodItem.getName());
+            if (Boolean.FALSE.equals(foodItem.getInStock())) {
+                throw new RuntimeException("Item is out of stock: " + foodItem.getName());
             }
 
-            foodItem.setStockQuantity(foodItem.getStockQuantity() - cartItem.getQuantity());
-
-            if (!"UNLIMITED".equals(foodItem.getStockResetType()) && foodItem.getStockQuantity() <= 0) {
-                foodItem.setInStock(false);
-                if ("DAILY".equals(foodItem.getStockResetType()) && foodItem.getDailyRestockTime() != null) {
-                    foodItem.setNextAvailableAt(computeNextRestock(foodItem.getDailyRestockTime()));
-                    foodItem.setOosReason("Sold out today");
-                } else {
-                    foodItem.setOosReason("Out of stock");
+            // UNLIMITED items never track or deplete stock.
+            if (!"UNLIMITED".equals(foodItem.getStockResetType())) {
+                int available = foodItem.getStockQuantity() == null ? 0 : foodItem.getStockQuantity();
+                if (available < cartItem.getQuantity()) {
+                    throw new RuntimeException("Insufficient stock for item: " + foodItem.getName());
                 }
-            } else if (foodItem.getStockQuantity() == 0) {
-                foodItem.setInStock(false);
-            }
 
-            foodItemRepository.save(foodItem);
+                foodItem.setStockQuantity(available - cartItem.getQuantity());
+
+                if (foodItem.getStockQuantity() <= 0) {
+                    foodItem.setInStock(false);
+                    if ("DAILY".equals(foodItem.getStockResetType()) && foodItem.getDailyRestockTime() != null) {
+                        foodItem.setNextAvailableAt(computeNextRestock(foodItem.getDailyRestockTime()));
+                        foodItem.setOosReason("Sold out today");
+                    } else {
+                        foodItem.setOosReason("Out of stock");
+                    }
+                }
+
+                foodItemRepository.save(foodItem);
+            }
 
             OrderItem orderItem = new OrderItem();
             orderItem.setOrder(order);
@@ -165,7 +174,23 @@ public class OrderService {
         order.setOrderItems(orderItems);
         order.setTotalAmount(totalAmount);
 
+        // Fixed target time so the tracking page can count down instead of
+        // recomputing the same "minutes remaining" on every poll.
+        order.setEstimatedDeliveryAt(scheduledTime != null
+                ? scheduledTime
+                : LocalDateTime.now().plusMinutes(DEFAULT_DELIVERY_MINUTES));
+
         Order savedOrder = orderRepository.save(order);
+
+        // Every order gets a payment record. Phase 01 is Cash on Delivery only.
+        Payment payment = new Payment();
+        payment.setOrder(savedOrder);
+        payment.setAmount(totalAmount);
+        payment.setPaymentMethod("COD");
+        payment.setPaymentStatus("PENDING");
+        payment.setPaymentDate(LocalDateTime.now());
+        paymentRepository.save(payment);
+        savedOrder.setPayment(payment);
 
         cart.getItems().clear();
         cartRepository.save(cart);
@@ -191,7 +216,8 @@ public class OrderService {
         for (OrderItem item : order.getOrderItems()) {
             FoodItem food = item.getFoodItem();
             if (!"UNLIMITED".equals(food.getStockResetType())) {
-                food.setStockQuantity(food.getStockQuantity() + item.getQuantity());
+                int current = food.getStockQuantity() == null ? 0 : food.getStockQuantity();
+                food.setStockQuantity(current + item.getQuantity());
                 if (food.getStockQuantity() > 0) {
                     food.setInStock(true);
                     food.setNextAvailableAt(null);
@@ -199,6 +225,12 @@ public class OrderService {
                 }
                 foodItemRepository.save(food);
             }
+        }
+
+        Payment payment = order.getPayment();
+        if (payment != null) {
+            payment.setPaymentStatus("CANCELLED");
+            paymentRepository.save(payment);
         }
 
         order.setStatus("CANCELLED");

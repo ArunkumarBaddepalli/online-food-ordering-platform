@@ -1,8 +1,8 @@
 package com.app.fooddelivery.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.Data;
-import java.util.List;
 
 @Entity
 @Data
@@ -17,6 +17,8 @@ public class User {
     @Column(unique = true)
     private String email;
 
+    // WRITE_ONLY: accepted on register/login, never serialised back to a client.
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
     private String role; // USER, ADMIN, RESTAURANT_OWNER

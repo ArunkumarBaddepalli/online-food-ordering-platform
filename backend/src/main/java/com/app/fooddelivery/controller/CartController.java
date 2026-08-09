@@ -2,7 +2,6 @@ package com.app.fooddelivery.controller;
 
 import com.app.fooddelivery.dto.CartValidationResponse;
 import com.app.fooddelivery.model.Cart;
-import com.app.fooddelivery.model.CartItem;
 import com.app.fooddelivery.service.CartService;
 import com.app.fooddelivery.repository.CartItemRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,18 +35,12 @@ public class CartController {
     }
 
     @PutMapping("/item/{itemId}")
-    public ResponseEntity<CartItem> updateCartItem(@PathVariable Long itemId, @RequestParam int quantity) {
-        CartItem item = cartItemRepository.findById(itemId)
-                .orElseThrow(() -> new RuntimeException("Cart item not found"));
-
-        if (quantity > item.getFoodItem().getStockQuantity()) {
-            throw new RuntimeException(
-                    "Cannot update quantity. Only " + item.getFoodItem().getStockQuantity() + " available.");
+    public ResponseEntity<?> updateCartItem(@PathVariable Long itemId, @RequestParam int quantity) {
+        try {
+            return ResponseEntity.ok(cartService.updateCartItemQuantity(itemId, quantity));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-
-        item.setQuantity(quantity);
-        item.setTotalPrice(item.getFoodItem().getPrice() * quantity);
-        return ResponseEntity.ok(cartItemRepository.save(item));
     }
 
     @DeleteMapping("/item/{itemId}")

@@ -7,8 +7,11 @@ import com.app.fooddelivery.repository.UserRepository;
 import com.app.fooddelivery.repository.ModifierRepository;
 import com.app.fooddelivery.repository.OrderRepository;
 import com.app.fooddelivery.dto.CartValidationResponse;
+import com.app.fooddelivery.repository.CartItemRepository;
+import com.app.fooddelivery.repository.ModifierGroupRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +37,12 @@ public class CartService {
     private OrderRepository orderRepository;
 
     @Autowired
+    private ModifierGroupRepository modifierGroupRepository;
+
+    @Autowired
+    private CartItemRepository cartItemRepository;
+
+    @Autowired
     private RestaurantHoursValidator hoursValidator;
 
     public Cart getCartByUserId(Long userId) {
@@ -45,9 +54,15 @@ public class CartService {
         });
     }
 
+    @Transactional
     public Cart addToCart(Long userId, Long foodId, int quantity, List<Long> modifierIds) {
+        if (quantity < 1) {
+            throw new RuntimeException("Quantity must be at least 1");
+        }
+
         Cart cart = getCartByUserId(userId);
-        FoodItem food = foodItemRepository.findById(foodId).orElseThrow();
+        FoodItem food = foodItemRepository.findById(foodId)
+                .orElseThrow(() -> new RuntimeException("Food item not found"));
 
         // Check item is in stock
         if (Boolean.FALSE.equals(food.getInStock())) {
@@ -75,6 +90,8 @@ public class CartService {
         }
         final List<Modifier> modifiers = modifiersList;
 
+        validateModifierSelection(food, modifiers);
+
         Optional<CartItem> existingItemOpt = cart.getItems().stream()
                 .filter(item -> item.getFoodItem().getId().equals(foodId))
                 .filter(item -> areModifiersEqual(item, modifiers))
@@ -83,15 +100,11 @@ public class CartService {
         if (existingItemOpt.isPresent()) {
             CartItem existingItem = existingItemOpt.get();
             int newQuantity = existingItem.getQuantity() + quantity;
-            if (newQuantity > food.getStockQuantity()) {
-                throw new RuntimeException("Cannot add more items. Only " + food.getStockQuantity() + " available.");
-            }
+            assertStockAvailable(food, newQuantity);
             existingItem.setQuantity(newQuantity);
             updateItemPrice(existingItem);
         } else {
-            if (quantity > food.getStockQuantity()) {
-                throw new RuntimeException("Cannot add more items. Only " + food.getStockQuantity() + " available.");
-            }
+            assertStockAvailable(food, quantity);
             CartItem newItem = new CartItem();
             newItem.setFoodItem(food);
             newItem.setQuantity(quantity);
@@ -109,6 +122,82 @@ public class CartService {
         }
 
         return cartRepository.save(cart);
+    }
+
+    /**
+     * Stock check that treats UNLIMITED items as always available and tolerates
+     * a null stockQuantity on rows that were not created through JPA.
+     */
+    private void assertStockAvailable(FoodItem food, int wanted) {
+        if ("UNLIMITED".equals(food.getStockResetType())) {
+            return;
+        }
+        int available = food.getStockQuantity() == null ? 0 : food.getStockQuantity();
+        if (wanted > available) {
+            throw new RuntimeException("Cannot add more items. Only " + available + " available.");
+        }
+    }
+
+    /**
+     * Enforces the min/max/required rules configured on each modifier group,
+     * and rejects modifiers that are unavailable or belong to another item.
+     */
+    private void validateModifierSelection(FoodItem food, List<Modifier> selected) {
+        for (Modifier mod : selected) {
+            if (Boolean.FALSE.equals(mod.getAvailable())) {
+                throw new RuntimeException("Option is not available: " + mod.getName());
+            }
+            if (mod.getModifierGroup() == null
+                    || !mod.getModifierGroup().getFoodItem().getId().equals(food.getId())) {
+                throw new RuntimeException("Option does not belong to this item: " + mod.getName());
+            }
+        }
+
+        for (ModifierGroup group : modifierGroupRepository.findByFoodItemId(food.getId())) {
+            long chosen = selected.stream()
+                    .filter(m -> m.getModifierGroup().getId().equals(group.getId()))
+                    .count();
+
+            int min = group.getMinSelection() == null ? 0 : group.getMinSelection();
+            if (Boolean.TRUE.equals(group.getRequired()) && min < 1) {
+                min = 1;
+            }
+
+            if (chosen < min) {
+                throw new RuntimeException(
+                        "Please choose at least " + min + " option(s) for: " + group.getName());
+            }
+
+            if (group.getMaxSelection() != null && chosen > group.getMaxSelection()) {
+                throw new RuntimeException(
+                        "You can choose at most " + group.getMaxSelection() + " option(s) for: " + group.getName());
+            }
+        }
+    }
+
+    /**
+     * Changes the quantity of a cart item, keeping modifier prices intact.
+     */
+    @Transactional
+    public CartItem updateCartItemQuantity(Long itemId, int quantity) {
+        if (quantity < 1) {
+            throw new RuntimeException("Quantity must be at least 1");
+        }
+
+        CartItem item = cartItemRepository.findById(itemId)
+                .orElseThrow(() -> new RuntimeException("Cart item not found"));
+
+        FoodItem food = item.getFoodItem();
+        if (!"UNLIMITED".equals(food.getStockResetType())) {
+            int available = food.getStockQuantity() == null ? 0 : food.getStockQuantity();
+            if (quantity > available) {
+                throw new RuntimeException("Cannot update quantity. Only " + available + " available.");
+            }
+        }
+
+        item.setQuantity(quantity);
+        updateItemPrice(item);
+        return cartItemRepository.save(item);
     }
 
     private void updateItemPrice(CartItem item) {
@@ -179,6 +268,7 @@ public class CartService {
         return response;
     }
 
+    @Transactional
     public Cart reorder(Long userId, Long orderId) {
         clearCart(userId);
         Order order = orderRepository.findById(orderId)

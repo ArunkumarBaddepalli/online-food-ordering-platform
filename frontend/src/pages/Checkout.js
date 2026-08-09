@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { placeOrder, getCart, getRestaurantLiveStatus, getUserAddresses, addUserAddress, updateUserAddress, deleteUserAddress, validateDelivery } from "../services/api";
+import { placeOrder, getCart, getRestaurantLiveStatus, getUserAddresses, addUserAddress, updateUserAddress, deleteUserAddress, validateDelivery, getPaymentConfig, createRazorpayCheckout, verifyRazorpayPayment } from "../services/api";
 import { useNavigate } from "react-router-dom";
 
 import AddressMap from "../components/AddressMap";
@@ -7,6 +7,9 @@ import AddressMap from "../components/AddressMap";
 const Checkout = () => {
     const [address, setAddress] = useState("");
     const [orderType, setOrderType] = useState("DELIVERY");
+    const [paymentMethod, setPaymentMethod] = useState("COD");
+    const [onlineEnabled, setOnlineEnabled] = useState(false);
+    const [paying, setPaying] = useState(false);
     const [deliveryTiming, setDeliveryTiming] = useState("");
     const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
     const [restaurantInfo, setRestaurantInfo] = useState(null);
@@ -28,6 +31,13 @@ const Checkout = () => {
 
     const navigate = useNavigate();
     const user = JSON.parse(localStorage.getItem("user"));
+
+    useEffect(() => {
+        // Online payment only appears when the server has Razorpay credentials.
+        getPaymentConfig()
+            .then((res) => setOnlineEnabled(Boolean(res.data?.onlineEnabled)))
+            .catch(() => setOnlineEnabled(false));
+    }, []);
 
     useEffect(() => {
         // Fetch cart and restaurant info
@@ -167,25 +177,98 @@ const Checkout = () => {
         }
     };
 
+    /** Loads the Razorpay checkout script once, on demand. */
+    const loadRazorpayScript = () =>
+        new Promise((resolve) => {
+            if (window.Razorpay) return resolve(true);
+            const script = document.createElement("script");
+            script.src = "https://checkout.razorpay.com/v1/checkout.js";
+            script.onload = () => resolve(true);
+            script.onerror = () => resolve(false);
+            document.body.appendChild(script);
+        });
+
+    /**
+     * Opens the Razorpay popup for an order we have already created, then asks
+     * our backend to verify the signature before treating it as paid.
+     */
+    const payOnline = async (orderId) => {
+        const ok = await loadRazorpayScript();
+        if (!ok) throw new Error("Could not reach the payment provider. Check your connection.");
+
+        const { data: checkout } = await createRazorpayCheckout(orderId);
+
+        return new Promise((resolve, reject) => {
+            const rzp = new window.Razorpay({
+                key: checkout.keyId,
+                amount: checkout.amount,
+                currency: checkout.currency,
+                order_id: checkout.razorpayOrderId,
+                name: "Food Delivery",
+                description: `Order #${orderId}`,
+                prefill: { name: user?.name || "", email: user?.email || "" },
+                theme: { color: "#198754" },
+                handler: async (res) => {
+                    try {
+                        await verifyRazorpayPayment({
+                            orderId: String(orderId),
+                            razorpayOrderId: res.razorpay_order_id,
+                            razorpayPaymentId: res.razorpay_payment_id,
+                            razorpaySignature: res.razorpay_signature,
+                        });
+                        resolve();
+                    } catch (e) {
+                        reject(new Error(e.response?.data || "We could not verify your payment."));
+                    }
+                },
+                modal: {
+                    ondismiss: () =>
+                        reject(new Error("Payment cancelled. Your order is saved and still awaiting payment.")),
+                },
+            });
+
+            rzp.on("payment.failed", (res) =>
+                reject(new Error(res.error?.description || "The payment did not go through.")));
+
+            rzp.open();
+        });
+    };
+
     const handlePlaceOrder = async (e) => {
         e.preventDefault();
         setError("");
+        setPaying(true);
 
         try {
             const scheduledTime = deliveryTiming === "scheduled" ? selectedTimeSlot : null;
-            const response = await placeOrder(user.id, orderType === "DELIVERY" ? address : "", scheduledTime, orderType);
+            const response = await placeOrder(
+                user.id,
+                orderType === "DELIVERY" ? address : "",
+                scheduledTime,
+                orderType,
+                paymentMethod
+            );
 
             if (typeof response.data === 'string') {
                 setError(response.data);
                 return;
             }
 
-            alert("Order placed successfully!");
-            navigate("/orders");
+            const orderId = response.data.id;
+
+            if (paymentMethod === "ONLINE") {
+                // The order exists but is unpaid until the popup succeeds.
+                await payOnline(orderId);
+                navigate(`/orders/${orderId}`);
+                return;
+            }
+
+            navigate(`/orders/${orderId}`);
         } catch (error) {
             console.error(error);
-            const errorMessage = error.response?.data || "Failed to place order";
-            setError(errorMessage);
+            setError(error.response?.data || error.message || "Failed to place order");
+        } finally {
+            setPaying(false);
         }
     };
 
@@ -469,22 +552,60 @@ const Checkout = () => {
 
                     <div className="mb-3">
                         <label className="form-label">Payment Method</label>
-                        <select className="form-select">
-                            <option>Cash on Delivery</option>
-                            <option>Credit Card (Mock)</option>
-                        </select>
+
+                        <div className="form-check">
+                            <input
+                                className="form-check-input"
+                                type="radio"
+                                name="paymentMethod"
+                                id="payCod"
+                                checked={paymentMethod === "COD"}
+                                onChange={() => setPaymentMethod("COD")}
+                            />
+                            <label className="form-check-label" htmlFor="payCod">
+                                Cash on {orderType === "PICKUP" ? "Pickup" : "Delivery"}
+                                <span className="text-muted small d-block">
+                                    Pay the restaurant directly. They will hand you a bill.
+                                </span>
+                            </label>
+                        </div>
+
+                        <div className="form-check mt-2">
+                            <input
+                                className="form-check-input"
+                                type="radio"
+                                name="paymentMethod"
+                                id="payOnline"
+                                checked={paymentMethod === "ONLINE"}
+                                onChange={() => setPaymentMethod("ONLINE")}
+                                disabled={!onlineEnabled}
+                            />
+                            <label className="form-check-label" htmlFor="payOnline">
+                                Pay Online
+                                <span className="text-muted small d-block">
+                                    {onlineEnabled
+                                        ? "Card, UPI or netbanking. A receipt is available to download afterwards."
+                                        : "Currently unavailable."}
+                                </span>
+                            </label>
+                        </div>
                     </div>
 
                     <button
                         type="submit"
                         className="btn btn-success w-100"
                         disabled={
+                            paying ||
                             !deliveryTiming ||
                             (deliveryTiming === "scheduled" && timeSlots.length === 0) ||
                             (orderType === "DELIVERY" && (!validationResult.possible || isCheckingDelivery))
                         }
                     >
-                        {deliveryTiming === "scheduled" ? "Schedule Order" : "Place Order Now"}
+                        {paying
+                            ? "Working…"
+                            : paymentMethod === "ONLINE"
+                                ? "Pay & Place Order"
+                                : deliveryTiming === "scheduled" ? "Schedule Order" : "Place Order Now"}
                     </button>
                 </form>
             </div>

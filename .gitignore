@@ -7,3 +7,9 @@ target/
 
 # runtime uploads
 uploads/
+
+# Local secrets — never commit
+.env
+.env.local
+*.env.local
+backend/.env.local

@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { getOrderDetails, cancelOrder } from '../services/api';
+import PaymentReceipt from '../components/PaymentReceipt';
 import './OrderTracking.css';
 
 function OrderTracking() {
     const { orderId } = useParams();
     const [order, setOrder] = useState(null);
+    const [showReceipt, setShowReceipt] = useState(false);
+
+    const payment = order?.payment;
+    const isPrepaid = payment?.paymentMethod === "ONLINE" && payment?.paymentStatus === "PAID";
 
     useEffect(() => {
         if (orderId) {
@@ -112,9 +117,26 @@ function OrderTracking() {
                     <div className="order-summary">
                         <p><strong>Delivery Address:</strong> {order.deliveryAddress}</p>
                         <p className="total"><strong>Total:</strong> ${(order.totalAmount ?? 0).toFixed(2)}</p>
+
+                        {/* A receipt is only meaningful once money has actually
+                            been taken. Cash orders are settled at the door and
+                            the restaurant issues its own bill. */}
+                        {isPrepaid ? (
+                            <button className="btn btn-outline-success btn-sm" onClick={() => setShowReceipt(true)}>
+                                Download receipt
+                            </button>
+                        ) : (
+                            <p className="text-muted small mb-0">
+                                {payment?.paymentMethod === "ONLINE"
+                                    ? "Payment not completed yet."
+                                    : `Pay in cash on ${order.orderType === "PICKUP" ? "pickup" : "delivery"} — the restaurant will provide a bill.`}
+                            </p>
+                        )}
                     </div>
                 </div>
             </div>
+
+            {showReceipt && <PaymentReceipt order={order} onClose={() => setShowReceipt(false)} />}
         </div>
     );
 }

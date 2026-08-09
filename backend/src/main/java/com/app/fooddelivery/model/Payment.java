@@ -14,8 +14,12 @@ public class Payment {
 
     private LocalDateTime paymentDate;
     private Double amount;
-    private String paymentMethod; // COD, CREDIT_CARD, UPI
-    private String paymentStatus; // SUCCESS, FAILED
+    private String paymentMethod; // COD or ONLINE
+    private String paymentStatus; // PENDING, PAID, FAILED, CANCELLED
+
+    // Razorpay references, kept for the receipt and for support queries.
+    private String razorpayOrderId;
+    private String razorpayPaymentId;
 
     @OneToOne
     @JoinColumn(name = "order_id")

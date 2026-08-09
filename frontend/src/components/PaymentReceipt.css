@@ -1,0 +1,105 @@
+.receipt-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 2rem 1rem;
+    overflow-y: auto;
+    z-index: 1080;
+}
+
+.receipt-sheet {
+    background: #fff;
+    border-radius: 10px;
+    width: 100%;
+    max-width: 640px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.receipt-actions {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.receipt-body {
+    padding: 1.75rem;
+}
+
+.receipt-head {
+    text-align: center;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #212529;
+    margin-bottom: 1rem;
+}
+
+.receipt-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.receipt-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1.25rem;
+}
+
+.receipt-table th,
+.receipt-table td {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #eee;
+    vertical-align: top;
+}
+
+.receipt-table tfoot th {
+    border-top: 2px solid #212529;
+    border-bottom: none;
+    font-size: 1.05rem;
+}
+
+.receipt-payment > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.3rem 0;
+    border-bottom: 1px dashed #eee;
+}
+
+.receipt-note {
+    margin-top: 1.25rem;
+    text-align: center;
+}
+
+/* Printing shows the receipt alone, filling the page. */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+
+    .receipt-sheet,
+    .receipt-sheet * {
+        visibility: visible;
+    }
+
+    .receipt-backdrop {
+        position: static;
+        background: none;
+        padding: 0;
+        display: block;
+    }
+
+    .receipt-sheet {
+        max-width: none;
+        box-shadow: none;
+        border-radius: 0;
+    }
+
+    .no-print {
+        display: none !important;
+    }
+}

@@ -34,7 +34,8 @@ public class OrderController {
             @RequestParam Long userId,
             @RequestParam(required = false) String deliveryAddress,
             @RequestParam(required = false) String scheduledTime,
-            @RequestParam(required = false, defaultValue = "DELIVERY") String orderType) {
+            @RequestParam(required = false, defaultValue = "DELIVERY") String orderType,
+            @RequestParam(required = false, defaultValue = "COD") String paymentMethod) {
         try {
             LocalDateTime scheduledDateTime = null;
             if (scheduledTime != null && !scheduledTime.isEmpty()) {
@@ -48,7 +49,7 @@ public class OrderController {
                 return ResponseEntity.badRequest().body("Invalid order type. Must be PICKUP or DELIVERY");
             }
 
-            Order order = orderService.placeOrder(userId, deliveryAddress, scheduledDateTime, type);
+            Order order = orderService.placeOrder(userId, deliveryAddress, scheduledDateTime, type, paymentMethod);
             return ResponseEntity.ok(order);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());

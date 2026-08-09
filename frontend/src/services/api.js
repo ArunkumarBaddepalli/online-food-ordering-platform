@@ -52,7 +52,9 @@ export const getRestaurantHours = (restaurantId) => api.get(`/restaurants/${rest
 export const getAvailableTimeSlots = (restaurantId) => api.get(`/restaurants/${restaurantId}/time-slots`);
 
 // Payment
-export const pay = (paymentData) => api.post("/payment/pay", paymentData);
+export const getPaymentConfig = () => api.get("/payment/config");
+export const createRazorpayCheckout = (orderId) => api.post(`/payment/razorpay/order/${orderId}`);
+export const verifyRazorpayPayment = (payload) => api.post("/payment/razorpay/verify", payload);
 
 // Order History
 export const getUserOrders = (userId) => api.get(`/order/user/${userId}`);

@@ -66,6 +66,12 @@ public class OrderService {
 
     @Transactional
     public Order placeOrder(Long userId, String deliveryAddress, LocalDateTime scheduledTime, OrderType orderType) {
+        return placeOrder(userId, deliveryAddress, scheduledTime, orderType, "COD");
+    }
+
+    @Transactional
+    public Order placeOrder(Long userId, String deliveryAddress, LocalDateTime scheduledTime, OrderType orderType,
+            String paymentMethod) {
         Cart cart = cartRepository.findByUserId(userId).orElseThrow(() -> new RuntimeException("Cart not found"));
 
         if (cart.getItems().isEmpty()) {
@@ -185,11 +191,12 @@ public class OrderService {
 
         Order savedOrder = orderRepository.save(order);
 
-        // Every order gets a payment record. Phase 01 is Cash on Delivery only.
+        // Every order gets a payment record. Cash is collected on handover;
+        // an online payment is confirmed separately once Razorpay verifies it.
         Payment payment = new Payment();
         payment.setOrder(savedOrder);
         payment.setAmount(totalAmount);
-        payment.setPaymentMethod("COD");
+        payment.setPaymentMethod("ONLINE".equalsIgnoreCase(paymentMethod) ? "ONLINE" : "COD");
         payment.setPaymentStatus("PENDING");
         payment.setPaymentDate(LocalDateTime.now());
         paymentRepository.save(payment);

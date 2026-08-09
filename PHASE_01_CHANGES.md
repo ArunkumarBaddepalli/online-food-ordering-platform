@@ -1,6 +1,10 @@
-# Phase 01 — Change Plan for Review
+# Phase 01 — Change Record
 
-**Status:** awaiting your review. Nothing committed, nothing pushed, `main` untouched.
+**Status:** implemented, tested, committed on `phase-01` as `3b8a760`. Not pushed. `main` untouched.
+
+**Verification:** 38 unit tests green; booted against MySQL and exercised end to end (login, cart, modifiers, order, payment, ETA countdown, cancellation) on both a clean database and the existing one.
+
+**Two bugs were found during verification that are not in the list below** — see "Found during testing" at the end. Both were real and both are fixed.
 
 The changes below already exist as **uncommitted edits on the `phase-01` branch** — I wrote them before you asked me to stop. Treat this document as the review: read each item, mark it, and I'll act on your marks.
 
@@ -263,12 +267,77 @@ The earlier plan listed "`CartItemModifier.quantity` is never set, so it's null"
 
 ---
 
-## PART 4 — WHAT I NEED FROM YOU
+## PART 4 — FOUND DURING TESTING
 
-1. **Mark items 1–15** `[k]` / `[r]` / `[?]`.
-2. **Item 7 (modifier rules)** — does the menu UI already force a required-group choice? If not, this breaks add-to-cart for Margherita.
-3. **Item 15 (seed data)** — keep "Burger King" or use "Burger Barn"? Hyderabad coordinates OK?
-4. **Item 6** — is 35 minutes the right default ETA?
-5. Once marked, do you want the remaining four items (F-7, F-16, F-18, live DB run) done in this phase or dropped?
+Two real bugs surfaced only once the app was actually running. Neither was in the plan.
 
-I won't touch code again until you come back on these.
+### A. Any order with modifiers returned broken JSON  — **worst bug found**
+
+`OrderItemModifier.orderItem` had no `@JsonIgnore`, so the serialiser looped:
+
+```
+OrderItem -> selectedModifiers -> OrderItemModifier -> orderItem -> OrderItem -> ...
+```
+
+Placing an order with a crust and a topping returned **2,196,856 bytes** of nested JSON, truncated mid-write with `Could not write JSON: Infinite recursion (StackOverflowError)`.
+
+The order saved correctly, but the client got garbage — so order confirmation, order history and tracking would all have failed on any customised order. The equivalent field on the cart side (`CartItemModifier.cartItem`) already had the annotation; the order side was missed.
+
+Fixed. Same request now returns **3,055 bytes** of correct JSON.
+
+### B. Opening hours never worked at all
+
+`RestaurantHoursValidator` built its time formatters without a locale. This machine's default locale is `en_IN`, whose CLDR data uses lowercase `am`/`pm` — so `"11:00 PM"` failed every parse attempt and returned null.
+
+`isTimeInRange` returns `true` when either bound is null. Net result: **every restaurant read as open 24/7 regardless of its configured hours.**
+
+Formatters are now pinned to `Locale.US` and made case-insensitive, so both `"11:00 PM"` and `"11:00 pm"` parse. `RestaurantController` had the locale but not case-insensitivity; it was made consistent.
+
+This is why the boundary fix in item 9 could not have been observed before — the comparison was never reached.
+
+---
+
+## PART 5 — VERIFICATION PERFORMED
+
+**Tests:** 38 unit tests, 0 failures — `OrderServiceTest` (7), `CartServiceTest` (9), `UserServiceTest` (8), `RestaurantHoursValidatorTest` (8), `OrderETAServiceTest` (6).
+
+**Against a clean MySQL database:**
+
+| Check | Result |
+|---|---|
+| Seeder populates empty DB | 2 restaurants, 5 items, 4 modifier groups, 10 modifiers |
+| Seeded passwords | BCrypt `$2a$10$`, 60 chars |
+| Login response | no `password` field present |
+| Wrong password | 401 |
+| Pizza without crust | 400, "Please choose at least 1 option(s) for: Choose Crust" |
+| Quantity 1 → 2 with cheese | 28.98 — correct; the old bug gave 25.98 |
+| Quantity 0 | 400 |
+| Order placed | payment row COD / PENDING / 28.98 |
+| UNLIMITED stock after order | still 100 |
+| Invalid status `BANANA` | 400 |
+| ETA over 65 seconds | 34 min → 33 min, target timestamp unchanged |
+| Cancel | order CANCELLED, payment CANCELLED |
+
+**Against your existing database (11 restaurants, 41 items, 15 orders, 4 users):**
+
+| Check | Result |
+|---|---|
+| Seeder behaviour | "Existing data found, skipping demo seed entirely" |
+| Row counts after boot | unchanged — 4 / 11 / 15 / 41 |
+| Schema change | `orders.estimated_delivery_at` added; additive only |
+| Legacy rows (`stock_reset_type` NULL on all 41) | add to cart, order, stock decrement all work — no NPEs |
+| Existing order detail | renders in 2,619 bytes |
+
+**Test data cleanup:** the test order created in your real database was deleted and Pepperoni Pizza's stock restored to 40. Counts verified back at 4 / 11 / 15 / 41.
+
+**One thing I did not undo:** user 1's cart was cleared during testing (it held items from a previous session). That content is gone.
+
+Your app instance on ports 8080/8081 was left running and untouched; testing used 8098/8099 and a throwaway database that has since been dropped.
+
+---
+
+## PART 6 — STILL OPEN
+
+- **The API remains open to unauthenticated callers.** Any endpoint, any user's data. Fine while the repo is private and you demo locally; not fine deployed. Phase 02.
+- Not pushed to GitHub. Say the word and I'll push `phase-01`.
+- Still outstanding from the original list: merging the three Haversine copies, merging `SavedAddress`/`UserAddress`, replacing 23 `alert()` calls with toasts.

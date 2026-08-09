@@ -14,14 +14,11 @@ const Login = () => {
             const response = await login({ email, password });
             localStorage.setItem("user", JSON.stringify(response.data));
 
-            // Return to the page that sent us here, otherwise use the role landing page.
-            const cameFrom = location.state?.from;
-            const role = response.data.role;
-            const destination = cameFrom
-                ? cameFrom
-                : role === "RESTAURANT_OWNER"
-                    ? "/restaurant/dashboard"
-                    : "/";
+            // Land on the page that sent us here, otherwise the home page —
+            // for every role. Routing owners straight to the dashboard pushed
+            // them into the onboarding flow and left them unable to order.
+            // Owners reach their dashboard via "My Restaurant" in the navbar.
+            const destination = location.state?.from || "/";
 
             // Full reload so components re-read the stored user.
             window.location.assign(destination);

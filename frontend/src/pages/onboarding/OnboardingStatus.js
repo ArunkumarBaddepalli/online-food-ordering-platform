@@ -53,7 +53,9 @@ const OnboardingStatus = () => {
 
                 {status === "PENDING_REVIEW" && (
                     <div className="card p-4 text-center border-primary">
-                        <div className="spinner-border text-primary mb-3" />
+                        {/* A static icon, not a spinner. This is a resting state that can
+                            last days, so an animated loader implies work in progress. */}
+                        <div className="fs-1 mb-2">🕒</div>
                         <h5>Under Review</h5>
                         <p className="text-muted">Our team is reviewing your application. This typically takes 2-3 business days.</p>
                         <small className="text-muted">You'll be notified once a decision is made.</small>

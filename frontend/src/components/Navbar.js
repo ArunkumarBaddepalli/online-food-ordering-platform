@@ -38,7 +38,23 @@ const Navbar = () => {
                     <ul className="navbar-nav ms-auto">
                         {user ? (
                             <>
-                                {user.role === "RESTAURANT_OWNER" ? (
+                                {/* Everyone can shop, including restaurant owners and admins.
+                                    Owners previously had no Home/Cart/Orders links at all, which
+                                    left them stuck in the onboarding flow with no way to order. */}
+                                <li className="nav-item">
+                                    <Link className={`nav-link ${location.pathname === '/' ? 'active fw-bold' : ''}`} to="/">Home</Link>
+                                </li>
+                                <li className="nav-item">
+                                    <Link className={`nav-link ${location.pathname === '/cart' ? 'active fw-bold' : ''}`} to="/cart">Cart</Link>
+                                </li>
+                                <li className="nav-item">
+                                    <Link className={`nav-link ${location.pathname === '/orders' ? 'active fw-bold' : ''}`} to="/orders">Orders</Link>
+                                </li>
+                                <li className="nav-item">
+                                    <Link className={`nav-link ${location.pathname === '/profile' ? 'active fw-bold' : ''}`} to="/profile">Profile</Link>
+                                </li>
+
+                                {user.role === "RESTAURANT_OWNER" && (
                                     <>
                                         <li className="nav-item">
                                             <Link className={`nav-link ${location.pathname.startsWith('/restaurant/dashboard') ? 'active fw-bold' : ''}`}
@@ -49,30 +65,12 @@ const Navbar = () => {
                                                 to="/restaurant/onboard">Onboarding</Link>
                                         </li>
                                     </>
-                                ) : user.role === "ADMIN" ? (
-                                    <>
-                                        <li className="nav-item">
-                                            <Link className="nav-link" to="/">Home</Link>
-                                        </li>
-                                        <li className="nav-item">
-                                            <span className="nav-link text-warning">Admin</span>
-                                        </li>
-                                    </>
-                                ) : (
-                                    <>
-                                        <li className="nav-item">
-                                            <Link className={`nav-link ${location.pathname === '/' ? 'active fw-bold' : ''}`} to="/">Home</Link>
-                                        </li>
-                                        <li className="nav-item">
-                                            <Link className={`nav-link ${location.pathname === '/cart' ? 'active fw-bold' : ''}`} to="/cart">Cart</Link>
-                                        </li>
-                                        <li className="nav-item">
-                                            <Link className={`nav-link ${location.pathname === '/orders' ? 'active fw-bold' : ''}`} to="/orders">Orders</Link>
-                                        </li>
-                                        <li className="nav-item">
-                                            <Link className={`nav-link ${location.pathname === '/profile' ? 'active fw-bold' : ''}`} to="/profile">Profile</Link>
-                                        </li>
-                                    </>
+                                )}
+
+                                {user.role === "ADMIN" && (
+                                    <li className="nav-item">
+                                        <span className="nav-link text-warning">Admin</span>
+                                    </li>
                                 )}
                                 <li className="nav-item">
                                     <button className="btn btn-danger btn-sm ms-2" onClick={handleLogout}>Logout</button>

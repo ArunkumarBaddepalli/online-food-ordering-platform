@@ -6,4 +6,7 @@ import java.util.List;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByUserId(Long userId);
+
+    /** Incoming orders for a restaurant, newest first. */
+    List<Order> findByRestaurantIdOrderByOrderDateDesc(Long restaurantId);
 }

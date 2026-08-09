@@ -37,6 +37,9 @@ public class OrderService {
     private RestaurantHoursValidator hoursValidator;
 
     @Autowired
+    private OrderStatusFlow statusFlow;
+
+    @Autowired
     private GeocodingService geocodingService;
 
     private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
@@ -199,6 +202,38 @@ public class OrderService {
     }
 
     /**
+     * Moves an order to the next stage, rejecting any move the lifecycle
+     * does not allow. Cancelling goes through cancelOrder so that stock and
+     * payment are handled too.
+     */
+    @Transactional
+    public Order advanceStatus(Long orderId, String requestedStatus) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        String target = statusFlow.validateTransition(order, requestedStatus);
+
+        if (OrderStatusFlow.CANCELLED.equals(target)) {
+            return cancelOrder(orderId);
+        }
+
+        order.setStatus(target);
+
+        // Cash is collected when the food changes hands.
+        Payment payment = order.getPayment();
+        if (payment != null
+                && (OrderStatusFlow.DELIVERED.equals(target) || OrderStatusFlow.PICKED_UP.equals(target))
+                && "COD".equals(payment.getPaymentMethod())
+                && "PENDING".equals(payment.getPaymentStatus())) {
+            payment.setPaymentStatus("PAID");
+            payment.setPaymentDate(LocalDateTime.now());
+            paymentRepository.save(payment);
+        }
+
+        return orderRepository.save(order);
+    }
+
+    /**
      * Cancel order. Only allowed for PLACED or CONFIRMED status.
      * Restores stock for non-UNLIMITED items.
      */
@@ -208,9 +243,9 @@ public class OrderService {
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
         String status = order.getStatus();
-        if (!"PLACED".equals(status) && !"CONFIRMED".equals(status)) {
+        if (!statusFlow.canCancel(status)) {
             throw new RuntimeException("Cannot cancel order with status: " + status +
-                    ". Only PLACED or CONFIRMED orders can be cancelled.");
+                    ". Once the restaurant starts preparing your food it can no longer be cancelled.");
         }
 
         for (OrderItem item : order.getOrderItems()) {

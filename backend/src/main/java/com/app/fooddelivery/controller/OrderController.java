@@ -26,6 +26,9 @@ public class OrderController {
     @Autowired
     private OrderETAService etaService;
 
+    @Autowired
+    private com.app.fooddelivery.service.OrderStatusFlow statusFlow;
+
     @PostMapping("/place")
     public ResponseEntity<?> placeOrder(
             @RequestParam Long userId,
@@ -63,21 +66,40 @@ public class OrderController {
                 .ok(orderRepository.findById(orderId).orElseThrow(() -> new RuntimeException("Order not found")));
     }
 
-    /** Statuses an order is allowed to hold. */
-    private static final List<String> VALID_STATUSES = List.of(
-            "PLACED", "CONFIRMED", "PREPARING", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED");
-
     @PutMapping("/{orderId}/status")
     public ResponseEntity<?> updateOrderStatus(@PathVariable Long orderId, @RequestParam String status) {
-        String newStatus = status == null ? "" : status.trim().toUpperCase();
-        if (!VALID_STATUSES.contains(newStatus)) {
-            return ResponseEntity.badRequest()
-                    .body("Invalid status. Must be one of: " + String.join(", ", VALID_STATUSES));
+        try {
+            return ResponseEntity.ok(orderService.advanceStatus(orderId, status));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
 
-        Order order = orderRepository.findById(orderId).orElseThrow(() -> new RuntimeException("Order not found"));
-        order.setStatus(newStatus);
-        return ResponseEntity.ok(orderRepository.save(order));
+    /**
+     * Incoming orders for a restaurant, newest first, each with the next legal
+     * step so the dashboard does not have to model the lifecycle itself.
+     */
+    @GetMapping("/restaurant/{restaurantId}")
+    public ResponseEntity<List<Map<String, Object>>> getRestaurantOrders(@PathVariable Long restaurantId) {
+        List<Map<String, Object>> result = orderRepository
+                .findByRestaurantIdOrderByOrderDateDesc(restaurantId).stream()
+                .map(order -> {
+                    Map<String, Object> row = new HashMap<>();
+                    row.put("order", order);
+                    row.put("nextStatus", statusFlow.nextForwardStep(order));
+                    row.put("nextLabel", statusFlow.nextForwardLabel(order));
+                    row.put("canCancel", statusFlow.canCancel(order.getStatus()));
+                    row.put("isFinished", statusFlow.isTerminal(order.getStatus()));
+
+                    OrderETAService.ETAResult eta = etaService.calculateETA(order);
+                    row.put("eta", Map.of(
+                            "minutesRemaining", eta.getMinutesRemaining(),
+                            "statusMessage", eta.getStatusMessage()));
+                    return row;
+                })
+                .toList();
+
+        return ResponseEntity.ok(result);
     }
 
     /**

@@ -253,6 +253,10 @@ public class RestaurantOnboardingService {
         restaurant.setSlotDurationMinutes(ob.getSlotDurationMinutes());
         restaurant.setIsOpen(false); // owner activates manually
 
+        // Record who runs this restaurant. Without it the owner dashboard has
+        // no way to work out which orders belong to them.
+        userRepository.findById(ob.getUserId()).ifPresent(restaurant::setOwner);
+
         // Map first open day's hours to legacy fields for backward compat
         ob.getOperatingHours().stream()
                 .filter(h -> Boolean.TRUE.equals(h.getIsOpen()))

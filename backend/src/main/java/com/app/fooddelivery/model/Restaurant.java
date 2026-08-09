@@ -26,6 +26,12 @@ public class Restaurant {
     private String phone;
     private String email;
 
+    // Which user account runs this restaurant. Set when an onboarding
+    // application is approved; null for restaurants added directly as data.
+    @ManyToOne
+    @JoinColumn(name = "owner_id")
+    private User owner;
+
     // Legacy Operating Hours (single pair, backward compat)
     private String openingTime; // e.g., "11:00 AM"
     private String closingTime; // e.g., "10:00 PM"

@@ -44,9 +44,15 @@ public class RestaurantController {
 
     @GetMapping("/restaurants/{id}")
     public ResponseEntity<Restaurant> getRestaurantById(@PathVariable Long id) {
-        return restaurantService.getAllRestaurants().stream()
-                .filter(r -> r.getId().equals(id))
-                .findFirst()
+        return restaurantRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    /** The restaurant a given owner account runs, or 404 if they run none. */
+    @GetMapping("/restaurants/owned-by/{userId}")
+    public ResponseEntity<Restaurant> getRestaurantByOwner(@PathVariable Long userId) {
+        return restaurantRepository.findByOwnerId(userId)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

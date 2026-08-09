@@ -41,6 +41,12 @@ export const placeOrder = (userId, deliveryAddress, scheduledTime, orderType = "
 };
 export const cancelOrder = (orderId) => api.put(`/order/${orderId}/cancel`);
 
+// Restaurant owner: incoming orders and moving them through their stages
+export const getRestaurantOwnedBy = (userId) => api.get(`/restaurants/owned-by/${userId}`);
+export const getRestaurantOrders = (restaurantId) => api.get(`/order/restaurant/${restaurantId}`);
+export const updateOrderStatus = (orderId, status) =>
+    api.put(`/order/${orderId}/status`, null, { params: { status } });
+
 // Restaurant Hours & Scheduling (legacy — use getRestaurantLiveStatus instead)
 export const getRestaurantHours = (restaurantId) => api.get(`/restaurants/${restaurantId}/settings`);
 export const getAvailableTimeSlots = (restaurantId) => api.get(`/restaurants/${restaurantId}/time-slots`);

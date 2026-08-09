@@ -153,6 +153,20 @@ const RestaurantMenu = () => {
                 ← Back to Restaurants
             </button>
 
+            {/* Login state belongs to the page, not to each menu item. One notice
+                here instead of repeating it on every card. */}
+            {!isLoggedIn && (
+                <div className="alert alert-light border d-flex align-items-center justify-content-between py-2 mb-3">
+                    <span className="text-muted small mb-0">Browse freely — you'll need to sign in to place an order.</span>
+                    <button
+                        className="btn btn-sm btn-outline-success ms-3 flex-shrink-0"
+                        onClick={() => navigate("/login", { state: { from: location.pathname } })}
+                    >
+                        Login
+                    </button>
+                </div>
+            )}
+
             {/* Modifiers Modal */}
             {isModalOpen && selectedFoodItem && (
                 <ModifierSelectionModal
@@ -271,12 +285,12 @@ const RestaurantMenu = () => {
                                         <div className="d-flex align-items-center justify-content-between">
                                             {/* Quantity Control */}
                                             <div className="btn-group me-2" role="group">
-                                                <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => updateQuantity(item.id, -1)} disabled={!isLoggedIn || !item.inStock || (quantities[item.id] || 1) <= 1}>-</button>
+                                                <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => updateQuantity(item.id, -1)} disabled={!item.inStock || (quantities[item.id] || 1) <= 1}>-</button>
                                                 <span className="btn btn-outline-secondary btn-sm disabled text-dark border-top-0 border-bottom-0">{quantities[item.id] || 1}</span>
-                                                <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => updateQuantity(item.id, 1)} disabled={!isLoggedIn || !item.inStock}>+</button>
+                                                <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => updateQuantity(item.id, 1)} disabled={!item.inStock}>+</button>
                                             </div>
-                                            <button className={`btn ${!item.inStock ? 'btn-secondary' : isLoggedIn ? 'btn-success' : 'btn-outline-success'} flex-grow-1`} onClick={() => handleAddToCart(item)} disabled={!item.inStock} style={{ borderRadius: '8px' }}>
-                                                {!item.inStock ? 'Out of Stock' : isLoggedIn ? 'Add' : 'Login to order'}
+                                            <button className={`btn ${item.inStock ? 'btn-success' : 'btn-secondary'} flex-grow-1`} onClick={() => handleAddToCart(item)} disabled={!item.inStock} style={{ borderRadius: '8px' }}>
+                                                {item.inStock ? 'Add' : 'Out of Stock'}
                                             </button>
                                         </div>
                                     </div>
@@ -340,7 +354,7 @@ const RestaurantMenu = () => {
                                             type="button"
                                             className="btn btn-outline-secondary btn-sm"
                                             onClick={() => updateQuantity(item.id, -1)}
-                                            disabled={!isLoggedIn || !item.inStock || (quantities[item.id] || 1) <= 1}
+                                            disabled={!item.inStock || (quantities[item.id] || 1) <= 1}
                                         >-</button>
                                         <span className="btn btn-outline-secondary btn-sm disabled text-dark border-top-0 border-bottom-0">
                                             {quantities[item.id] || 1}
@@ -349,17 +363,17 @@ const RestaurantMenu = () => {
                                             type="button"
                                             className="btn btn-outline-secondary btn-sm"
                                             onClick={() => updateQuantity(item.id, 1)}
-                                            disabled={!isLoggedIn || !item.inStock}
+                                            disabled={!item.inStock}
                                         >+</button>
                                     </div>
 
                                     <button
-                                        className={`btn ${!item.inStock ? 'btn-secondary' : isLoggedIn ? 'btn-success' : 'btn-outline-success'} flex-grow-1`}
+                                        className={`btn ${item.inStock ? 'btn-success' : 'btn-secondary'} flex-grow-1`}
                                         onClick={() => handleAddToCart(item)}
                                         disabled={!item.inStock}
                                         style={{ borderRadius: '8px' }}
                                     >
-                                        {!item.inStock ? 'Out of Stock' : isLoggedIn ? 'Add' : 'Login to order'}
+                                        {item.inStock ? 'Add' : 'Out of Stock'}
                                     </button>
                                 </div>
                             </div>

@@ -49,6 +49,17 @@ public class RestaurantController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    /** Turns automatic order acceptance on or off for a restaurant. */
+    @PutMapping("/restaurants/{id}/auto-accept")
+    public ResponseEntity<?> setAutoAccept(@PathVariable Long id, @RequestParam boolean enabled) {
+        return restaurantRepository.findById(id)
+                .map(restaurant -> {
+                    restaurant.setAutoAcceptOrders(enabled);
+                    return ResponseEntity.ok((Object) restaurantRepository.save(restaurant));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     /** The restaurant a given owner account runs, or 404 if they run none. */
     @GetMapping("/restaurants/owned-by/{userId}")
     public ResponseEntity<Restaurant> getRestaurantByOwner(@PathVariable Long userId) {

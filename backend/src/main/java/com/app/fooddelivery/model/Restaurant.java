@@ -41,6 +41,10 @@ public class Restaurant {
     private Boolean acceptsScheduledOrders = true;
     private Integer slotDurationMinutes = 30;
 
+    // When on, new orders are confirmed automatically instead of waiting for
+    // the owner to tap Accept. Cooking and delivery stay manual.
+    private Boolean autoAcceptOrders = false;
+
     // Per-day operating hours (populated on onboarding approval)
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "restaurant_id")

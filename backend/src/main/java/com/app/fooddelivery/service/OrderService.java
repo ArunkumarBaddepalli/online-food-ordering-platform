@@ -114,7 +114,11 @@ public class OrderService {
         order.setUser(cart.getUser());
         order.setRestaurant(restaurant);
         order.setOrderDate(LocalDateTime.now());
-        order.setStatus("PLACED");
+        // Restaurants that opt into auto-accept skip the manual Accept tap.
+        // Everything after this still needs a real person.
+        order.setStatus(Boolean.TRUE.equals(restaurant.getAutoAcceptOrders())
+                ? OrderStatusFlow.CONFIRMED
+                : OrderStatusFlow.PLACED);
         order.setDeliveryAddress(deliveryAddress);
         order.setOrderType(orderType);
 

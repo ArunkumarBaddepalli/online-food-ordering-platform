@@ -155,6 +155,46 @@ class OrderServiceTest {
     }
 
     @Test
+    @DisplayName("A new order waits at PLACED when auto-accept is off")
+    void ordersWaitForManualAcceptanceByDefault() {
+        FoodItem pizza = foodItem(1L, "Margherita", "UNLIMITED", 100, 12.99);
+        givenCartWith(pizza, 1);
+
+        Order order = orderService.placeOrder(7L, "1 Test Street", null, OrderType.DELIVERY);
+
+        assertThat(order.getStatus()).isEqualTo("PLACED");
+    }
+
+    @Test
+    @DisplayName("With auto-accept on, a new order is confirmed straight away")
+    void autoAcceptConfirmsImmediately() {
+        restaurant.setAutoAcceptOrders(true);
+        FoodItem pizza = foodItem(1L, "Margherita", "UNLIMITED", 100, 12.99);
+        givenCartWith(pizza, 1);
+
+        Order order = orderService.placeOrder(7L, "1 Test Street", null, OrderType.DELIVERY);
+
+        assertThat(order.getStatus())
+                .as("only the Accept tap is skipped")
+                .isEqualTo("CONFIRMED");
+    }
+
+    @Test
+    @DisplayName("Auto-accept does not skip past preparing")
+    void autoAcceptStopsAtConfirmed() {
+        restaurant.setAutoAcceptOrders(true);
+        FoodItem pizza = foodItem(1L, "Margherita", "UNLIMITED", 100, 12.99);
+        givenCartWith(pizza, 1);
+
+        Order order = orderService.placeOrder(7L, "1 Test Street", null, OrderType.DELIVERY);
+
+        assertThat(statusFlow.nextForwardStep(order)).isEqualTo("PREPARING");
+        assertThat(statusFlow.canCancel(order.getStatus()))
+                .as("a customer can still cancel a confirmed order")
+                .isTrue();
+    }
+
+    @Test
     @DisplayName("Placing an order sets a fixed delivery target so the ETA can count down")
     void orderGetsEstimatedDeliveryTime() {
         FoodItem pizza = foodItem(1L, "Margherita", "UNLIMITED", 100, 12.99);

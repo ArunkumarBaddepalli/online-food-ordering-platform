@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { getOnboardingStatus, getRestaurantOwnedBy, API_BASE } from "../services/api";
+import { getOnboardingStatus, getRestaurantOwnedBy, setAutoAccept, API_BASE } from "../services/api";
 import OwnerOrdersPanel from "../components/OwnerOrdersPanel";
 
 const RestaurantDashboard = () => {
@@ -24,6 +24,18 @@ const RestaurantDashboard = () => {
             .catch(() => setOnboarding(null))
             .finally(() => setLoading(false));
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const toggleAutoAccept = async () => {
+        const next = !restaurant.autoAcceptOrders;
+        // Show the new state straight away, roll back if the save fails.
+        setRestaurant({ ...restaurant, autoAcceptOrders: next });
+        try {
+            await setAutoAccept(restaurant.id, next);
+        } catch (e) {
+            setRestaurant({ ...restaurant, autoAcceptOrders: !next });
+            alert("Could not change that setting. Please try again.");
+        }
+    };
 
     if (loading) return <div className="text-center mt-5"><div className="spinner-border" /></div>;
 
@@ -83,6 +95,26 @@ const RestaurantDashboard = () => {
                         <div>{restaurant.openingTime || "—"} – {restaurant.closingTime || "—"}</div>
                         <small className="text-muted">Restaurant ID #{restaurant.id}</small>
                     </div>
+                </div>
+            </div>
+
+            <div className="card p-3 mb-3">
+                <div className="form-check form-switch">
+                    <input
+                        className="form-check-input"
+                        type="checkbox"
+                        role="switch"
+                        id="autoAccept"
+                        checked={Boolean(restaurant.autoAcceptOrders)}
+                        onChange={toggleAutoAccept}
+                    />
+                    <label className="form-check-label" htmlFor="autoAccept">
+                        <strong>Accept orders automatically</strong>
+                        <span className="text-muted small d-block">
+                            New orders skip straight to Confirmed, so you don't have to tap Accept.
+                            Preparing and delivery still need you.
+                        </span>
+                    </label>
                 </div>
             </div>
 

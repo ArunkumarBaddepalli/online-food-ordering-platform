@@ -50,7 +50,9 @@ const LiveOrderBanner = ({ userId }) => {
                         {eta.minutesRemaining > 0 ? (
                             <>Arriving in <strong>{eta.minutesRemaining} min</strong></>
                         ) : (
-                            <strong>Order delivered!</strong>
+                            // The countdown reaching zero only means the estimate
+                            // elapsed, not that the order was actually delivered.
+                            <strong>Arriving any moment</strong>
                         )}
                     </div>
                 </div>

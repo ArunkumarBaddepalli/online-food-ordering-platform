@@ -13,9 +13,18 @@ import Profile from "./pages/Profile";
 import RestaurantOnboard from "./pages/onboarding/RestaurantOnboard";
 import OnboardingStatus from "./pages/onboarding/OnboardingStatus";
 import RestaurantDashboard from "./pages/RestaurantDashboard";
+import LiveOrderBanner from "./components/LiveOrderBanner";
 import "./App.css";
 
 function App() {
+  // A malformed entry should not take down the whole app shell.
+  let user = null;
+  try {
+    user = JSON.parse(localStorage.getItem("user"));
+  } catch {
+    user = null;
+  }
+
   return (
     <Router>
       <Navbar />
@@ -35,6 +44,10 @@ function App() {
           <Route path="/restaurant/dashboard" element={<RestaurantDashboard />} />
         </Routes>
       </div>
+
+      {/* Floating live-order tracker. The component existed but was never
+          mounted, so it had never rendered. */}
+      {user?.id && <LiveOrderBanner userId={user.id} />}
     </Router>
   );
 }

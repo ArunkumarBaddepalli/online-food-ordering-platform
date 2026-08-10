@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { getRestaurants, getCuisines } from "../services/api";
+import { getRestaurants, getCuisines, getAllRatings } from "../services/api";
+import StarRating from "../components/StarRating";
 import { Link } from "react-router-dom";
 
 const Home = () => {
@@ -8,9 +9,11 @@ const Home = () => {
     const [term, setTerm] = useState("");
     const [cuisine, setCuisine] = useState("");
     const [searching, setSearching] = useState(false);
+    const [ratings, setRatings] = useState({});
 
     useEffect(() => {
         getCuisines().then((res) => setCuisines(res.data || [])).catch(() => setCuisines([]));
+        getAllRatings().then((res) => setRatings(res.data || {})).catch(() => setRatings({}));
     }, []);
 
     // Waiting a moment after the last keystroke, so typing a word is one
@@ -98,7 +101,22 @@ const Home = () => {
                                     </span>
                                 </div>
 
-                                <p className="card-text text-muted small">{rest.description}</p>
+                                <p className="card-text text-muted small mb-1">{rest.description}</p>
+
+                                {ratings[rest.id] ? (
+                                    <div className="mb-2 small">
+                                        <StarRating value={ratings[rest.id].average} />
+                                        <span className="text-muted ms-1">
+                                            {ratings[rest.id].average} ({ratings[rest.id].count})
+                                        </span>
+                                    </div>
+                                ) : (
+                                    <div className="mb-2 small text-muted">Not yet rated</div>
+                                )}
+
+                                {rest.cuisineTypes && (
+                                    <p className="small text-muted mb-2">{rest.cuisineTypes.replace(/,/g, " · ")}</p>
+                                )}
 
                                 {/* Operating Hours - Dynamic Message */}
                                 {(() => {

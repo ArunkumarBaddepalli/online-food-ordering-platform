@@ -47,6 +47,9 @@ public class SecurityConfig {
                                 "/api/restaurants/*/live-status",
                                 "/api/restaurants/*/menu-status",
                                 "/api/restaurants/*/time-slots",
+                                "/api/restaurants/*/reviews",
+                                "/api/restaurants/ratings",
+                                "/api/restaurants/cuisines",
                                 "/api/foods/*",
                                 "/api/modifiers/**")
                         .permitAll()

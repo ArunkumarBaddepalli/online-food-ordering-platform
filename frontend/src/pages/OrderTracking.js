@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { getOrderDetails, cancelOrder } from '../services/api';
 import PaymentReceipt from '../components/PaymentReceipt';
+import OrderReview from '../components/OrderReview';
 import './OrderTracking.css';
 
 function OrderTracking() {
@@ -136,6 +137,8 @@ function OrderTracking() {
                     </div>
                 </div>
             </div>
+
+            <OrderReview orderId={order.id} />
 
             {showReceipt && <PaymentReceipt order={order} onClose={() => setShowReceipt(false)} />}
         </div>

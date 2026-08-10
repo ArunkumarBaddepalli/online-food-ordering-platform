@@ -64,6 +64,13 @@ export const getRestaurants = (search = "", cuisine = "") => {
     return api.get("/restaurants", { params });
 };
 export const getCuisines = () => api.get("/restaurants/cuisines");
+
+// Ratings and reviews
+export const getAllRatings = () => api.get("/restaurants/ratings");
+export const getRestaurantReviews = (restaurantId) => api.get(`/restaurants/${restaurantId}/reviews`);
+export const getOrderReview = (orderId) => api.get(`/orders/${orderId}/review`);
+export const submitReview = (orderId, rating, comment) =>
+    api.post(`/orders/${orderId}/review`, { rating, comment });
 export const getRestaurantById = (id) => api.get(`/restaurants/${id}`);
 export const getRestaurantMenu = (restaurantId) => api.get(`/foods/${restaurantId}`);
 export const getRestaurantLiveStatus = (restaurantId) => api.get(`/restaurants/${restaurantId}/live-status`);

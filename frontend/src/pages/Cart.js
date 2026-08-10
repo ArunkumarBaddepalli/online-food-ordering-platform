@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import React, { useEffect, useState, useCallback } from "react";
 import { getCart, getRestaurantLiveStatus, validateCart, updateCartItem, removeCartItem , getCurrentUser } from "../services/api";
 import { Link } from "react-router-dom";
@@ -50,7 +51,7 @@ const Cart = () => {
             await updateCartItem(itemId, newQuantity);
             await fetchCart();
         } catch (err) {
-            alert(err.response?.data || "Failed to update quantity");
+            toast.error(err.response?.data || "Failed to update quantity");
         }
     };
 
@@ -59,7 +60,7 @@ const Cart = () => {
             await removeCartItem(itemId);
             await fetchCart();
         } catch {
-            alert("Failed to remove item");
+            toast.error("Failed to remove item");
         }
     };
 

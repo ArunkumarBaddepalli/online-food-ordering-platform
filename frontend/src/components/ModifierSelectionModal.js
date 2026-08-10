@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import React, { useState, useEffect } from "react";
 
 
@@ -65,7 +66,7 @@ const ModifierSelectionModal = ({ foodItem, onClose, onAddToOrder }) => {
             if (group.required || group.minSelection > 0) {
                 const count = Array.isArray(groupSelection) ? groupSelection.length : (groupSelection ? 1 : 0);
                 if (count < group.minSelection) {
-                    alert(`Please select at least ${group.minSelection} option(s) for ${group.name}`);
+                    toast.warning(`Please select at least ${group.minSelection} option(s) for ${group.name}`);
                     return false;
                 }
             }
@@ -74,7 +75,7 @@ const ModifierSelectionModal = ({ foodItem, onClose, onAddToOrder }) => {
             if (group.maxSelection > 0) {
                 const count = Array.isArray(groupSelection) ? groupSelection.length : (groupSelection ? 1 : 0);
                 if (count > group.maxSelection) {
-                    alert(`You can only select up to ${group.maxSelection} option(s) for ${group.name}`);
+                    toast.warning(`You can only select up to ${group.maxSelection} option(s) for ${group.name}`);
                     return false;
                 }
             }

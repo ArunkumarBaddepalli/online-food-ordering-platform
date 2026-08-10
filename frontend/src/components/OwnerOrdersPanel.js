@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import React, { useState, useEffect, useCallback } from "react";
 import { getRestaurantOrders, updateOrderStatus, cancelOrder } from "../services/api";
 
@@ -46,7 +47,7 @@ const OwnerOrdersPanel = ({ restaurantId }) => {
             await updateOrderStatus(orderId, status);
             await load();
         } catch (e) {
-            alert(e.response?.data || "Could not update the order.");
+            toast.error(e.response?.data || "Could not update the order.");
         } finally {
             setBusyId(null);
         }
@@ -59,7 +60,7 @@ const OwnerOrdersPanel = ({ restaurantId }) => {
             await cancelOrder(orderId);
             await load();
         } catch (e) {
-            alert(e.response?.data || "Could not cancel the order.");
+            toast.error(e.response?.data || "Could not cancel the order.");
         } finally {
             setBusyId(null);
         }

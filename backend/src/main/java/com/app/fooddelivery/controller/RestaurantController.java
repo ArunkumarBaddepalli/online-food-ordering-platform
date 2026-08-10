@@ -36,6 +36,12 @@ public class RestaurantController {
     @Autowired
     private CurrentUser currentUser;
 
+    @Autowired
+    private com.app.fooddelivery.service.DistanceCalculationService distanceCalculationService;
+
+    @Autowired
+    private com.app.fooddelivery.service.GeocodingService geocodingService;
+
     @GetMapping("/restaurants")
     public ResponseEntity<List<Restaurant>> getAllRestaurants() {
         return ResponseEntity.ok(restaurantService.getAllRestaurants());
@@ -177,9 +183,8 @@ public class RestaurantController {
             userLat = request.getLatitude();
             userLon = request.getLongitude();
         } else if (request.getAddress() != null && !request.getAddress().isEmpty()) {
-            com.app.fooddelivery.service.GeocodingService geocodingService = new com.app.fooddelivery.service.GeocodingService();
-            com.app.fooddelivery.service.GeocodingService.GeocodingResult result = geocodingService
-                    .geocodeAddress(request.getAddress());
+            com.app.fooddelivery.service.GeocodingService.GeocodingResult result =
+                    geocodingService.geocodeAddress(request.getAddress());
 
             if (result == null) {
                 response.put("possible", false);
@@ -194,7 +199,7 @@ public class RestaurantController {
             return ResponseEntity.ok(response);
         }
 
-        double distance = com.app.fooddelivery.service.GeocodingService.calculateDistance(
+        double distance = distanceCalculationService.calculateDistance(
                 restaurant.getLatitude(), restaurant.getLongitude(), userLat, userLon);
 
         boolean possible = distance <= restaurant.getDeliveryRadiusKm();

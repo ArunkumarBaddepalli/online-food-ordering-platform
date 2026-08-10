@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getOnboardingStatus, getRestaurantOwnedBy, setAutoAccept, API_BASE , getCurrentUser } from "../services/api";
@@ -33,7 +34,7 @@ const RestaurantDashboard = () => {
             await setAutoAccept(restaurant.id, next);
         } catch (e) {
             setRestaurant({ ...restaurant, autoAcceptOrders: !next });
-            alert("Could not change that setting. Please try again.");
+            toast.error("Could not change that setting. Please try again.");
         }
     };
 

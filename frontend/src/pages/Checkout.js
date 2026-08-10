@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import React, { useState, useEffect } from "react";
 import { placeOrder, getCart, getRestaurantLiveStatus, getUserAddresses, addUserAddress, updateUserAddress, deleteUserAddress, validateDelivery, getPaymentConfig, createRazorpayCheckout, verifyRazorpayPayment , getCurrentUser } from "../services/api";
 import { useNavigate } from "react-router-dom";
@@ -116,7 +117,7 @@ const Checkout = () => {
 
     const handleAddAddress = async () => {
         if (!newAddress || !newAddressPincode) {
-            alert("Address and Pincode are required");
+            toast.warning("Address and pincode are required");
             return;
         }
         try {
@@ -148,7 +149,7 @@ const Checkout = () => {
             setNewAddressLng(null);
         } catch (err) {
             console.error("Failed to save address:", err);
-            alert("Failed to save address");
+            toast.error("Failed to save address");
         }
     };
 
@@ -173,7 +174,7 @@ const Checkout = () => {
             }
         } catch (err) {
             console.error("Failed to delete address:", err);
-            alert("Failed to delete address");
+            toast.error("Failed to delete address");
         }
     };
 

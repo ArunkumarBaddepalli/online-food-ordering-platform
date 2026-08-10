@@ -17,6 +17,8 @@ import OnboardingStatus from "./pages/onboarding/OnboardingStatus";
 import RestaurantDashboard from "./pages/RestaurantDashboard";
 import LiveOrderBanner from "./components/LiveOrderBanner";
 import { getCurrentUser } from "./services/api";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import "./App.css";
 
 const OWNER = ["RESTAURANT_OWNER", "ADMIN"];
@@ -83,6 +85,8 @@ function Shell() {
 
       {/* Live order tracking belongs to the customer site only. */}
       {!isPartnerArea && user?.id && <LiveOrderBanner userId={user.id} />}
+
+      <ToastContainer position="top-right" autoClose={3000} newestOnTop closeOnClick pauseOnHover />
     </>
   );
 }

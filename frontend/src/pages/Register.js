@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import React, { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { register, startOnboarding, saveSession } from "../services/api";
@@ -34,7 +35,7 @@ const Register = () => {
             }
         } catch (error) {
             console.error("Registration failed", error);
-            alert("Registration failed. Email may already be in use.");
+            toast.error("Registration failed. Email may already be in use.");
         }
     };
 

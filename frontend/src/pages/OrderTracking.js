@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { getOrderDetails, cancelOrder } from '../services/api';
@@ -26,7 +27,7 @@ function OrderTracking() {
             await cancelOrder(order.id);
             setOrder(prev => ({ ...prev, status: 'CANCELLED' }));
         } catch (error) {
-            alert(error.response?.data || "Failed to cancel order");
+            toast.error(error.response?.data || "Failed to cancel order");
         }
     };
 

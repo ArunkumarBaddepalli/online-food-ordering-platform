@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import React, { useEffect, useState } from "react";
 import { getRestaurantMenu, addToCart, clearCart, getRestaurantLiveStatus, API_BASE } from "../services/api";
 import ModifierSelectionModal from "../components/ModifierSelectionModal";
@@ -61,7 +62,7 @@ const RestaurantMenu = () => {
 
     const handleAddToCart = async (foodItem) => {
         if (!foodItem.inStock) {
-            alert("This item is currently out of stock");
+            toast.warning("This item is currently out of stock");
             return;
         }
         if (!isLoggedIn) {
@@ -78,7 +79,7 @@ const RestaurantMenu = () => {
             try {
                 const qty = quantities[foodItem.id] || 1;
                 await addToCart(user.id, foodItem.id, qty);
-                alert("Added to cart!");
+                toast.success("Added to cart");
             } catch (error) {
                 console.error("Add to cart error:", error);
                 if (error.response) {
@@ -90,7 +91,7 @@ const RestaurantMenu = () => {
                     setPendingModifierIds([]);
                     setShowClearCartModal(true);
                 } else {
-                    alert(`Failed to add to cart: ${error.response?.data?.message || error.message}`);
+                    toast.error(`Failed to add to cart: ${error.response?.data?.message || error.message}`);
                 }
             }
         }
@@ -99,7 +100,7 @@ const RestaurantMenu = () => {
     const handleModalAddToOrder = async (foodItem, modifierIds, quantity = 1) => {
         try {
             await addToCart(user.id, foodItem.id, quantity, modifierIds);
-            alert("Added to cart with modifiers!");
+            toast.success("Added to cart");
             setIsModalOpen(false);
             setSelectedFoodItem(null);
         } catch (error) {
@@ -110,7 +111,7 @@ const RestaurantMenu = () => {
                 setShowClearCartModal(true);
                 setIsModalOpen(false); // Close selection modal
             } else {
-                alert("Failed to add to cart");
+                toast.error("Failed to add to cart");
             }
         }
     };
@@ -121,13 +122,13 @@ const RestaurantMenu = () => {
         try {
             await clearCart(user.id);
             await addToCart(user.id, pendingCartItem.id, 1, pendingModifierIds);
-            alert("Cart cleared and item added!");
+            toast.success("Started a new basket");
             setShowClearCartModal(false);
             setPendingCartItem(null);
             setPendingModifierIds([]);
         } catch (error) {
             console.error(error);
-            alert("Failed to clear cart and add item");
+            toast.error("Failed to clear cart and add item");
         }
     };
 

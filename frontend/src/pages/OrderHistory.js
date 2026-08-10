@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import React, { useState, useEffect } from 'react';
 import { getUserOrders, reorder, cancelOrder } from '../services/api';
 import { useNavigate } from 'react-router-dom';
@@ -50,7 +51,7 @@ function OrderHistory() {
             await cancelOrder(orderId);
             setOrders(orders.map(o => o.id === orderId ? { ...o, status: 'CANCELLED' } : o));
         } catch (error) {
-            alert(error.response?.data || "Failed to cancel order");
+            toast.error(error.response?.data || "Failed to cancel order");
         }
     };
 
@@ -65,7 +66,7 @@ function OrderHistory() {
                 navigate('/cart');
             } catch (error) {
                 console.error("Reorder failed:", error);
-                alert("Failed to reorder items. Some items might be unavailable.");
+                toast.error("Failed to reorder items. Some items might be unavailable.");
             }
         }
     };

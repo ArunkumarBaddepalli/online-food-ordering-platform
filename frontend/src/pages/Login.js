@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { login, saveSession } from "../services/api";
@@ -23,7 +24,7 @@ const Login = () => {
             window.location.assign(destination);
         } catch (error) {
             console.error("Login failed", error);
-            alert("Invalid credentials");
+            toast.error("Invalid credentials");
         }
     };
 

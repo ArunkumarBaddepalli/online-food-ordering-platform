@@ -1,3 +1,4 @@
+import { toast } from "react-toastify";
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getUserProfile, updateUserProfile } from '../services/api';
@@ -26,7 +27,7 @@ function Profile() {
                 setUser(response.data);
                 localStorage.setItem('user', JSON.stringify(response.data));
                 setEditing(false);
-                alert('Profile updated successfully!');
+                toast.success('Profile updated');
             })
             .catch(error => console.error('Error updating profile:', error));
     };

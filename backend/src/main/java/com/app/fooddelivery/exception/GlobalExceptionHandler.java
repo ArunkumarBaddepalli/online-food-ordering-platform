@@ -14,6 +14,16 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.FORBIDDEN);
     }
 
+    /**
+     * An unknown URL is a 404, not a server fault. Without this the catch-all
+     * below turned every mistyped path into a 500.
+     */
+    @ExceptionHandler({ org.springframework.web.servlet.NoHandlerFoundException.class,
+            org.springframework.web.servlet.resource.NoResourceFoundException.class })
+    public ResponseEntity<String> handleNotFound(Exception ex) {
+        return new ResponseEntity<>("Not found", HttpStatus.NOT_FOUND);
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<String> handleRuntimeException(RuntimeException ex) {
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);

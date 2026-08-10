@@ -68,10 +68,15 @@ public class OrderETAService {
         }
 
         // Count down towards the target stored when the order was placed.
-        // Older orders have no target, so fall back to the per-status estimate.
         LocalDateTime target = order.getEstimatedDeliveryAt();
+
         if (target == null) {
-            target = now.plusMinutes(fallbackMinutes);
+            // Orders placed before that target existed. Measure from when the
+            // order was actually made, not from now — otherwise a months-old
+            // order reports the same "25 minutes away" every time it is asked.
+            target = order.getOrderDate() != null
+                    ? order.getOrderDate().plusMinutes(fallbackMinutes)
+                    : now.plusMinutes(fallbackMinutes);
         }
 
         long minutesRemaining = ChronoUnit.MINUTES.between(now, target);

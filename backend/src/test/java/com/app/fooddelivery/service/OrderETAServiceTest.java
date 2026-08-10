@@ -56,12 +56,24 @@ class OrderETAServiceTest {
     }
 
     @Test
-    @DisplayName("Orders placed before estimatedDeliveryAt existed fall back to the per-status estimate")
+    @DisplayName("Orders placed before estimatedDeliveryAt existed measure from when they were placed")
     void legacyOrderFallsBack() {
-        Order legacy = order("CONFIRMED", null);
+        Order justPlaced = order("CONFIRMED", null);
+        justPlaced.setOrderDate(LocalDateTime.now());
 
-        assertThat(service.calculateETA(legacy).getMinutesRemaining()).isEqualTo(20);
-        assertThat(service.calculateETA(legacy).getEstimatedDeliveryTime()).isNotNull();
+        assertThat(service.calculateETA(justPlaced).getMinutesRemaining()).isBetween(18, 20);
+        assertThat(service.calculateETA(justPlaced).getEstimatedDeliveryTime()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("A months-old order does not keep claiming it is minutes away")
+    void staleLegacyOrderDoesNotClaimAnEta() {
+        Order ancient = order("PLACED", null);
+        ancient.setOrderDate(LocalDateTime.now().minusDays(60));
+
+        assertThat(service.calculateETA(ancient).getMinutesRemaining())
+                .as("its estimate expired two months ago")
+                .isZero();
     }
 
     @Test

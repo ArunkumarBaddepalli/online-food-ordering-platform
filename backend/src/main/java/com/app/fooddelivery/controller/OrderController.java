@@ -134,8 +134,13 @@ public class OrderController {
     @GetMapping("/user/{userId}/active")
     public ResponseEntity<List<Map<String, Object>>> getActiveOrders(@PathVariable Long userId) {
         currentUser.requireSelfOrAdmin(userId);
+        // Newest first: the floating tracker shows the first of these, and the
+        // customer means the order they just placed, not their oldest one.
         List<Order> activeOrders = orderRepository.findByUserId(userId).stream()
-                .filter(order -> !order.getStatus().equals("DELIVERED") && !order.getStatus().equals("CANCELLED"))
+                .filter(order -> !statusFlow.isTerminal(order.getStatus()))
+                .sorted(java.util.Comparator.comparing(
+                        Order::getOrderDate,
+                        java.util.Comparator.nullsLast(java.util.Comparator.reverseOrder())))
                 .toList();
 
         List<Map<String, Object>> ordersWithETA = activeOrders.stream().map(order -> {

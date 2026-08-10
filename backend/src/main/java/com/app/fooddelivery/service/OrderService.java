@@ -40,6 +40,9 @@ public class OrderService {
     private OrderStatusFlow statusFlow;
 
     @Autowired
+    private RazorpayPaymentService razorpayPaymentService;
+
+    @Autowired
     private GeocodingService geocodingService;
 
     @Autowired
@@ -112,6 +115,7 @@ public class OrderService {
         order.setStatus(Boolean.TRUE.equals(restaurant.getAutoAcceptOrders())
                 ? OrderStatusFlow.CONFIRMED
                 : OrderStatusFlow.PLACED);
+        order.setStatusChangedAt(LocalDateTime.now());
         order.setDeliveryAddress(deliveryAddress);
         order.setOrderType(orderType);
 
@@ -222,6 +226,7 @@ public class OrderService {
         }
 
         order.setStatus(target);
+        order.setStatusChangedAt(LocalDateTime.now());
 
         // Cash is collected when the food changes hands.
         Payment payment = order.getPayment();
@@ -268,11 +273,19 @@ public class OrderService {
 
         Payment payment = order.getPayment();
         if (payment != null) {
-            payment.setPaymentStatus("CANCELLED");
-            paymentRepository.save(payment);
+            if ("ONLINE".equals(payment.getPaymentMethod()) && "PAID".equals(payment.getPaymentStatus())) {
+                // Money was actually taken, so it has to go back. The service
+                // marks it REFUND_PENDING if Razorpay does not confirm, rather
+                // than pretending the customer has been repaid.
+                razorpayPaymentService.refund(payment);
+            } else {
+                payment.setPaymentStatus("CANCELLED");
+                paymentRepository.save(payment);
+            }
         }
 
         order.setStatus("CANCELLED");
+        order.setStatusChangedAt(LocalDateTime.now());
         return orderRepository.save(order);
     }
 }

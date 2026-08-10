@@ -24,6 +24,7 @@ public class Order {
     private LocalDateTime orderDate;
     private LocalDateTime scheduledDeliveryTime; // For scheduled orders
     private LocalDateTime estimatedDeliveryAt; // Fixed target so the ETA counts down
+    private LocalDateTime statusChangedAt;     // When the order last moved stage
     private Boolean isScheduled = false; // Whether this is a scheduled order
 
     @Enumerated(EnumType.STRING)

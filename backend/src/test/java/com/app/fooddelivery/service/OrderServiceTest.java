@@ -38,6 +38,8 @@ class OrderServiceTest {
     @Mock private PaymentRepository paymentRepository;
     @Mock private RestaurantHoursValidator hoursValidator;
     @Mock private GeocodingService geocodingService;
+    @Mock private RazorpayPaymentService razorpayPaymentService;
+    @Mock private DistanceCalculationService distanceCalculationService;
 
     // Real lifecycle rules rather than a mock — the transitions are the thing
     // under test in the cancellation cases below.

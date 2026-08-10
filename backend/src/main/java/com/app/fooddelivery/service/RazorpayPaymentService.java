@@ -163,4 +163,48 @@ public class RazorpayPaymentService {
         log.info("Order {} paid online, razorpay payment {}", orderId, razorpayPaymentId);
         return paymentRepository.save(payment);
     }
+
+    /**
+     * Refunds a payment that was actually taken.
+     *
+     * Returns true only when Razorpay accepted the refund. Anything else leaves
+     * the payment marked for manual attention rather than silently claiming the
+     * customer got their money back.
+     */
+    public boolean refund(Payment payment) {
+        if (payment == null
+                || !"ONLINE".equals(payment.getPaymentMethod())
+                || !"PAID".equals(payment.getPaymentStatus())) {
+            return false;
+        }
+
+        if (!isEnabled() || payment.getRazorpayPaymentId() == null) {
+            payment.setPaymentStatus("REFUND_PENDING");
+            paymentRepository.save(payment);
+            log.warn("Cannot reach Razorpay to refund payment {}; left as REFUND_PENDING", payment.getId());
+            return false;
+        }
+
+        try {
+            RazorpayClient client = new RazorpayClient(keyId, keySecret);
+
+            JSONObject request = new JSONObject();
+            request.put("amount", Math.round(payment.getAmount() * 100));
+            request.put("speed", "normal");
+
+            client.payments.refund(payment.getRazorpayPaymentId(), request);
+
+            payment.setPaymentStatus("REFUNDED");
+            paymentRepository.save(payment);
+            log.info("Refunded payment {} for razorpay payment {}", payment.getId(),
+                    payment.getRazorpayPaymentId());
+            return true;
+
+        } catch (Exception e) {
+            payment.setPaymentStatus("REFUND_PENDING");
+            paymentRepository.save(payment);
+            log.error("Refund failed for payment {}, left as REFUND_PENDING", payment.getId(), e);
+            return false;
+        }
+    }
 }

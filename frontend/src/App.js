@@ -23,6 +23,9 @@ import "./App.css";
 
 const OWNER = ["RESTAURANT_OWNER", "ADMIN"];
 
+// Pages where a floating tracker would sit on top of what the user is doing.
+const HIDE_BANNER_ON = ["/login", "/register", "/checkout", "/cart"];
+
 /**
  * The customer site and the partner portal are separate products that happen
  * to share a deployment: different audience, different navigation, different
@@ -83,8 +86,11 @@ function Shell() {
         </Routes>
       </div>
 
-      {/* Live order tracking belongs to the customer site only. */}
-      {!isPartnerArea && user?.id && <LiveOrderBanner userId={user.id} />}
+      {/* Live order tracking belongs to the customer site only, and never on a
+          page the user is trying to fill in. */}
+      {!isPartnerArea && !HIDE_BANNER_ON.includes(location.pathname) && user?.id && (
+        <LiveOrderBanner userId={user.id} />
+      )}
 
       <ToastContainer position="top-right" autoClose={3000} newestOnTop closeOnClick pauseOnHover />
     </>

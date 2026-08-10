@@ -42,9 +42,64 @@ public class RestaurantController {
     @Autowired
     private com.app.fooddelivery.service.GeocodingService geocodingService;
 
+    /**
+     * Restaurants, optionally narrowed by a search term or a cuisine.
+     *
+     * The term is matched against the restaurant name, its description and the
+     * names of dishes on its menu, so searching "biryani" finds the places that
+     * serve it rather than only those with it in their name.
+     */
     @GetMapping("/restaurants")
-    public ResponseEntity<List<Restaurant>> getAllRestaurants() {
-        return ResponseEntity.ok(restaurantService.getAllRestaurants());
+    public ResponseEntity<List<Restaurant>> getAllRestaurants(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String cuisine) {
+
+        List<Restaurant> restaurants = restaurantService.getAllRestaurants();
+
+        if (cuisine != null && !cuisine.isBlank()) {
+            String wanted = cuisine.trim().toLowerCase();
+            restaurants = restaurants.stream()
+                    .filter(r -> r.getCuisineTypes() != null
+                            && r.getCuisineTypes().toLowerCase().contains(wanted))
+                    .toList();
+        }
+
+        if (search != null && !search.isBlank()) {
+            String term = search.trim().toLowerCase();
+            restaurants = restaurants.stream()
+                    .filter(r -> matches(r, term))
+                    .toList();
+        }
+
+        return ResponseEntity.ok(restaurants);
+    }
+
+    private boolean matches(Restaurant restaurant, String term) {
+        if (contains(restaurant.getName(), term)
+                || contains(restaurant.getDescription(), term)
+                || contains(restaurant.getCuisineTypes(), term)) {
+            return true;
+        }
+        return restaurantService.getFoodItemsByRestaurant(restaurant.getId()).stream()
+                .anyMatch(item -> contains(item.getName(), term));
+    }
+
+    private boolean contains(String value, String term) {
+        return value != null && value.toLowerCase().contains(term);
+    }
+
+    /** The cuisines actually present on the platform, for the filter buttons. */
+    @GetMapping("/restaurants/cuisines")
+    public ResponseEntity<List<String>> getCuisines() {
+        return ResponseEntity.ok(restaurantService.getAllRestaurants().stream()
+                .map(Restaurant::getCuisineTypes)
+                .filter(c -> c != null && !c.isBlank())
+                .flatMap(c -> java.util.Arrays.stream(c.split(",")))
+                .map(String::trim)
+                .filter(c -> !c.isEmpty())
+                .distinct()
+                .sorted()
+                .toList());
     }
 
     @PostMapping("/restaurants")

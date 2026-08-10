@@ -251,6 +251,7 @@ public class RestaurantOnboardingService {
         restaurant.setDeliveryRadiusKm(ob.getDeliveryRadiusKm() != null ? ob.getDeliveryRadiusKm() : 10.0);
         restaurant.setAcceptsScheduledOrders(ob.getAcceptsScheduledOrders());
         restaurant.setSlotDurationMinutes(ob.getSlotDurationMinutes());
+        restaurant.setCuisineTypes(ob.getCuisineTypes());
         restaurant.setIsOpen(false); // owner activates manually
 
         // Record who runs this restaurant. Without it the owner dashboard has

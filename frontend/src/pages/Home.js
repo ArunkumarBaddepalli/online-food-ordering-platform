@@ -1,19 +1,77 @@
 import React, { useEffect, useState } from "react";
-import { getRestaurants } from "../services/api";
+import { getRestaurants, getCuisines } from "../services/api";
 import { Link } from "react-router-dom";
 
 const Home = () => {
     const [restaurants, setRestaurants] = useState([]);
+    const [cuisines, setCuisines] = useState([]);
+    const [term, setTerm] = useState("");
+    const [cuisine, setCuisine] = useState("");
+    const [searching, setSearching] = useState(false);
 
     useEffect(() => {
-        getRestaurants().then(response => {
-            setRestaurants(response.data);
-        }).catch(error => console.error(error));
+        getCuisines().then((res) => setCuisines(res.data || [])).catch(() => setCuisines([]));
     }, []);
+
+    // Waiting a moment after the last keystroke, so typing a word is one
+    // request rather than one per letter.
+    useEffect(() => {
+        setSearching(true);
+        const timer = setTimeout(() => {
+            getRestaurants(term, cuisine)
+                .then((response) => setRestaurants(response.data))
+                .catch((error) => console.error(error))
+                .finally(() => setSearching(false));
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [term, cuisine]);
+
+    const clearAll = () => { setTerm(""); setCuisine(""); };
+    const filtered = Boolean(term || cuisine);
 
     return (
         <div className="container mt-4">
-            <h2 className="mb-4">🍽️ Restaurants</h2>
+            <h2 className="mb-3">🍽️ Restaurants</h2>
+
+            <div className="input-group mb-3">
+                <span className="input-group-text bg-white">🔎</span>
+                <input
+                    className="form-control"
+                    placeholder="Search restaurants or dishes — try 'pizza'"
+                    value={term}
+                    onChange={(e) => setTerm(e.target.value)}
+                />
+                {term && (
+                    <button className="btn btn-outline-secondary" onClick={() => setTerm("")}>Clear</button>
+                )}
+            </div>
+
+            {cuisines.length > 0 && (
+                <div className="d-flex flex-wrap gap-2 mb-4">
+                    {cuisines.map((c) => (
+                        <button
+                            key={c}
+                            className={`btn btn-sm ${cuisine === c ? "btn-success" : "btn-outline-secondary"}`}
+                            onClick={() => setCuisine(cuisine === c ? "" : c)}
+                        >
+                            {c}
+                        </button>
+                    ))}
+                </div>
+            )}
+
+            {!searching && restaurants.length === 0 && (
+                <div className="text-center my-5">
+                    <p className="text-muted mb-2">
+                        {filtered ? "Nothing matched that." : "No restaurants yet."}
+                    </p>
+                    {filtered && (
+                        <button className="btn btn-outline-secondary btn-sm" onClick={clearAll}>
+                            Show everything
+                        </button>
+                    )}
+                </div>
+            )}
             <div className="row">
                 {restaurants.map(rest => (
                     <div className="col-md-4 mb-4" key={rest.id}>

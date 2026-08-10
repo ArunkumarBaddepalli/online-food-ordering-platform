@@ -57,7 +57,13 @@ export const register = (user) => api.post("/auth/register", user);
 export const login = (user) => api.post("/auth/login", user);
 
 // Restaurants
-export const getRestaurants = () => api.get("/restaurants");
+export const getRestaurants = (search = "", cuisine = "") => {
+    const params = {};
+    if (search) params.search = search;
+    if (cuisine) params.cuisine = cuisine;
+    return api.get("/restaurants", { params });
+};
+export const getCuisines = () => api.get("/restaurants/cuisines");
 export const getRestaurantById = (id) => api.get(`/restaurants/${id}`);
 export const getRestaurantMenu = (restaurantId) => api.get(`/foods/${restaurantId}`);
 export const getRestaurantLiveStatus = (restaurantId) => api.get(`/restaurants/${restaurantId}/live-status`);

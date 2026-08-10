@@ -45,6 +45,10 @@ public class Restaurant {
     // the owner to tap Accept. Cooking and delivery stay manual.
     private Boolean autoAcceptOrders = false;
 
+    // Comma separated, as captured during onboarding, e.g. "Indian,Chinese".
+    // Used for browsing by cuisine on the home page.
+    private String cuisineTypes;
+
     // Per-day operating hours (populated on onboarding approval)
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "restaurant_id")

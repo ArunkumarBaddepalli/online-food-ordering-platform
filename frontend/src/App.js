@@ -15,6 +15,7 @@ import Profile from "./pages/Profile";
 import RestaurantOnboard from "./pages/onboarding/RestaurantOnboard";
 import OnboardingStatus from "./pages/onboarding/OnboardingStatus";
 import RestaurantDashboard from "./pages/RestaurantDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
 import LiveOrderBanner from "./components/LiveOrderBanner";
 import { getCurrentUser } from "./services/api";
 import Footer from "./components/Footer";
@@ -54,6 +55,12 @@ function Shell() {
           <Route path="/orders" element={<RequireAuth><OrderHistory /></RequireAuth>} />
           <Route path="/orders/:orderId" element={<RequireAuth><OrderTracking /></RequireAuth>} />
           <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
+
+          {/* --- Admin --- */}
+          <Route
+            path="/admin"
+            element={<RequireAuth roles={["ADMIN"]}><AdminDashboard /></RequireAuth>}
+          />
 
           {/* --- Partner portal --- */}
           <Route path="/partner" element={<Navigate to="/partner/dashboard" replace />} />

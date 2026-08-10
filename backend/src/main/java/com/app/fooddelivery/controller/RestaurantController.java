@@ -75,7 +75,7 @@ public class RestaurantController {
     @GetMapping("/restaurants/owned-by/{userId}")
     public ResponseEntity<Restaurant> getRestaurantByOwner(@PathVariable Long userId) {
         currentUser.requireSelfOrAdmin(userId);
-        return restaurantRepository.findByOwnerId(userId)
+        return restaurantRepository.findFirstByOwnerIdOrderByIdAsc(userId)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

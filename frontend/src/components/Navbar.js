@@ -55,7 +55,8 @@ const Navbar = () => {
 
                                 {user.role === "ADMIN" && (
                                     <li className="nav-item">
-                                        <span className="nav-link text-warning">Admin</span>
+                                        <Link className={`nav-link text-warning ${location.pathname.startsWith('/admin') ? 'fw-bold' : ''}`}
+                                            to="/admin">Admin</Link>
                                     </li>
                                 )}
                                 <li className="nav-item">

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getOnboardingStatus, getRestaurantOwnedBy, setAutoAccept, API_BASE , getCurrentUser } from "../services/api";
 import OwnerOrdersPanel from "../components/OwnerOrdersPanel";
+import MenuManager from "../components/MenuManager";
 
 const RestaurantDashboard = () => {
     const navigate = useNavigate();
@@ -131,6 +132,8 @@ const RestaurantDashboard = () => {
                     </a>
                 </div>
             </div>
+
+            <MenuManager restaurantId={restaurant.id} />
 
             <OwnerOrdersPanel restaurantId={restaurant.id} />
         </div>

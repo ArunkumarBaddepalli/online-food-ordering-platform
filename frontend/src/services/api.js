@@ -76,8 +76,8 @@ export const addToCart = (userId, foodId, quantity, modifierIds = []) => {
 export const getModifiersForFoodItem = (foodId) => api.get(`/modifiers/food-item/${foodId}`);
 
 // Order
-export const placeOrder = (userId, deliveryAddress, scheduledTime, orderType = "DELIVERY") => {
-    const params = { userId, deliveryAddress, orderType };
+export const placeOrder = (userId, deliveryAddress, scheduledTime, orderType = "DELIVERY", paymentMethod = "COD") => {
+    const params = { userId, deliveryAddress, orderType, paymentMethod };
     if (scheduledTime) {
         params.scheduledTime = scheduledTime;
     }
@@ -126,6 +126,12 @@ export const updateUserAddress = (userId, addressId, address) => api.put(`/users
 export const validateDelivery = (restaurantId, address, latitude = null, longitude = null) => {
     return api.post(`/restaurants/${restaurantId}/validate-delivery`, { address, latitude, longitude });
 };
+
+// Menu management (restaurant owner)
+export const createMenuItem = (restaurantId, item) =>
+    api.post(`/menu`, item, { params: { restaurantId } });
+export const updateMenuItem = (itemId, item) => api.put(`/menu/${itemId}`, item);
+export const deleteMenuItem = (itemId) => api.delete(`/menu/${itemId}`);
 
 // Stock Management (restaurant owner)
 export const updateItemStock = (itemId, data) => api.put(`/menu/${itemId}/stock`, data);

@@ -2,6 +2,7 @@ import { toast } from "react-toastify";
 import React, { useState, useEffect } from "react";
 import { placeOrder, getCart, getRestaurantLiveStatus, getUserAddresses, addUserAddress, updateUserAddress, deleteUserAddress, validateDelivery, getPaymentConfig, createRazorpayCheckout, verifyRazorpayPayment , getCurrentUser } from "../services/api";
 import { useNavigate } from "react-router-dom";
+import { useCartCount } from "../context/CartCountContext";
 
 import AddressMap from "../components/AddressMap";
 
@@ -32,6 +33,7 @@ const Checkout = () => {
 
     const navigate = useNavigate();
     const user = getCurrentUser();
+    const { refresh: refreshCartCount } = useCartCount();
 
     useEffect(() => {
         // Online payment only appears when the server has Razorpay credentials.
@@ -256,6 +258,7 @@ const Checkout = () => {
             }
 
             const orderId = response.data.id;
+            refreshCartCount();
 
             if (paymentMethod === "ONLINE") {
                 // The order exists but is unpaid until the popup succeeds.

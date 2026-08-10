@@ -17,6 +17,8 @@ import OnboardingStatus from "./pages/onboarding/OnboardingStatus";
 import RestaurantDashboard from "./pages/RestaurantDashboard";
 import LiveOrderBanner from "./components/LiveOrderBanner";
 import { getCurrentUser } from "./services/api";
+import Footer from "./components/Footer";
+import { CartCountProvider } from "./context/CartCountContext";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./App.css";
@@ -86,6 +88,8 @@ function Shell() {
         </Routes>
       </div>
 
+      {!isPartnerArea && <Footer />}
+
       {/* Live order tracking belongs to the customer site only, and never on a
           page the user is trying to fill in. */}
       {!isPartnerArea && !HIDE_BANNER_ON.includes(location.pathname) && user?.id && (
@@ -100,7 +104,9 @@ function Shell() {
 function App() {
   return (
     <Router>
-      <Shell />
+      <CartCountProvider>
+        <Shell />
+      </CartCountProvider>
     </Router>
   );
 }

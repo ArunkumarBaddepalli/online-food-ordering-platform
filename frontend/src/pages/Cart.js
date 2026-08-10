@@ -1,6 +1,7 @@
 import { toast } from "react-toastify";
 import React, { useEffect, useState, useCallback } from "react";
 import { getCart, getRestaurantLiveStatus, validateCart, updateCartItem, removeCartItem , getCurrentUser } from "../services/api";
+import { useCartCount } from "../context/CartCountContext";
 import { Link } from "react-router-dom";
 
 const Cart = () => {
@@ -8,6 +9,7 @@ const Cart = () => {
     const [liveStatus, setLiveStatus] = useState(null);
     const [validation, setValidation] = useState(null);
     const user = getCurrentUser();
+    const { refresh: refreshCartCount } = useCartCount();
 
     const fetchCart = useCallback(async () => {
         if (!user) return;
@@ -50,6 +52,7 @@ const Cart = () => {
         try {
             await updateCartItem(itemId, newQuantity);
             await fetchCart();
+            refreshCartCount();
         } catch (err) {
             toast.error(err.response?.data || "Failed to update quantity");
         }
@@ -59,6 +62,7 @@ const Cart = () => {
         try {
             await removeCartItem(itemId);
             await fetchCart();
+            refreshCartCount();
         } catch {
             toast.error("Failed to remove item");
         }

@@ -2,6 +2,7 @@ import { toast } from "react-toastify";
 import React, { useEffect, useState } from "react";
 import { getRestaurantMenu, addToCart, clearCart, getRestaurantLiveStatus, API_BASE } from "../services/api";
 import ModifierSelectionModal from "../components/ModifierSelectionModal";
+import { useCartCount } from "../context/CartCountContext";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 
@@ -12,6 +13,7 @@ const RestaurantMenu = () => {
     const [liveStatus, setLiveStatus] = useState(null);
     const navigate = useNavigate();
     const location = useLocation();
+    const { refresh: refreshCartCount } = useCartCount();
 
     // A malformed localStorage entry should not blank the whole page.
     let storedUser = null;
@@ -80,6 +82,7 @@ const RestaurantMenu = () => {
                 const qty = quantities[foodItem.id] || 1;
                 await addToCart(user.id, foodItem.id, qty);
                 toast.success("Added to cart");
+                refreshCartCount();
             } catch (error) {
                 console.error("Add to cart error:", error);
                 if (error.response) {
@@ -101,6 +104,7 @@ const RestaurantMenu = () => {
         try {
             await addToCart(user.id, foodItem.id, quantity, modifierIds);
             toast.success("Added to cart");
+                refreshCartCount();
             setIsModalOpen(false);
             setSelectedFoodItem(null);
         } catch (error) {
@@ -123,6 +127,7 @@ const RestaurantMenu = () => {
             await clearCart(user.id);
             await addToCart(user.id, pendingCartItem.id, 1, pendingModifierIds);
             toast.success("Started a new basket");
+                refreshCartCount();
             setShowClearCartModal(false);
             setPendingCartItem(null);
             setPendingModifierIds([]);

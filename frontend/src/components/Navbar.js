@@ -1,11 +1,13 @@
 import React from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { getCurrentUser, clearSession } from "../services/api";
+import { useCartCount } from "../context/CartCountContext";
 
 const Navbar = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const user = getCurrentUser();
+    const { count: cartCount } = useCartCount();
 
     const handleLogout = () => {
         clearSession();
@@ -15,25 +17,6 @@ const Navbar = () => {
     return (
         <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
             <div className="container">
-                <div className="d-flex align-items-center me-3">
-                    <button
-                        className="btn btn-sm btn-outline-light me-2"
-                        onClick={() => navigate(-1)}
-                        style={{ fontSize: '1rem', padding: '0.25rem 0.5rem' }}
-                        title="Go Back"
-                    >
-                        ←
-                    </button>
-                    <button
-                        className="btn btn-sm btn-outline-light"
-                        onClick={() => navigate(1)}
-                        style={{ fontSize: '1rem', padding: '0.25rem 0.5rem' }}
-                        title="Go Forward"
-                    >
-                        →
-                    </button>
-                </div>
-
                 <Link className="navbar-brand" to="/">🍕 Food Delivery</Link>
                 <div className="collapse navbar-collapse">
                     <ul className="navbar-nav ms-auto">
@@ -46,7 +29,12 @@ const Navbar = () => {
                                     <Link className={`nav-link ${location.pathname === '/' ? 'active fw-bold' : ''}`} to="/">Home</Link>
                                 </li>
                                 <li className="nav-item">
-                                    <Link className={`nav-link ${location.pathname === '/cart' ? 'active fw-bold' : ''}`} to="/cart">Cart</Link>
+                                    <Link className={`nav-link ${location.pathname === '/cart' ? 'active fw-bold' : ''}`} to="/cart">
+                                        Cart
+                                        {cartCount > 0 && (
+                                            <span className="badge rounded-pill bg-success ms-1">{cartCount}</span>
+                                        )}
+                                    </Link>
                                 </li>
                                 <li className="nav-item">
                                     <Link className={`nav-link ${location.pathname === '/orders' ? 'active fw-bold' : ''}`} to="/orders">Orders</Link>

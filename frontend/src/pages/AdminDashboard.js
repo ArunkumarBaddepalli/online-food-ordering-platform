@@ -31,7 +31,9 @@ const AdminDashboard = () => {
             setApplications(res.data || []);
             setError(null);
         } catch (e) {
-            setError("Could not load applications.");
+            setError(e.response?.status === 403
+                ? "This account is not an administrator. If you signed in as someone else in another tab, sign in again here."
+                : "Could not load applications.");
         } finally {
             setLoading(false);
         }

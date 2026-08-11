@@ -30,6 +30,16 @@ export const clearSession = () => {
     localStorage.removeItem("user");
 };
 
+// One browser holds one session, shared by every tab. Signing in as somebody
+// else in a second tab therefore replaces the first tab's session, leaving it
+// showing a page it no longer has the right to see. Reloading on that change
+// keeps what is on screen honest.
+window.addEventListener("storage", (event) => {
+    if (event.key === "token" && event.oldValue !== event.newValue) {
+        window.location.reload();
+    }
+});
+
 // Every request carries the token, so the server can tell who is calling.
 api.interceptors.request.use((config) => {
     const token = getToken();

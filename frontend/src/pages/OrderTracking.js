@@ -1,5 +1,5 @@
 import { toast } from "react-toastify";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { getOrderDetails, cancelOrder } from '../services/api';
 import PaymentReceipt from '../components/PaymentReceipt';
@@ -9,18 +9,26 @@ import './OrderTracking.css';
 function OrderTracking() {
     const { orderId } = useParams();
     const [order, setOrder] = useState(null);
+    const [loadError, setLoadError] = useState(null);
     const [showReceipt, setShowReceipt] = useState(false);
 
     const payment = order?.payment;
     const isPrepaid = payment?.paymentMethod === "ONLINE" && payment?.paymentStatus === "PAID";
 
-    useEffect(() => {
-        if (orderId) {
-            getOrderDetails(orderId)
-                .then(response => setOrder(response.data))
-                .catch(error => console.error('Error fetching order:', error));
-        }
+    const load = useCallback(() => {
+        if (!orderId) return;
+        setLoadError(null);
+        getOrderDetails(orderId)
+            .then(response => setOrder(response.data))
+            .catch(error => {
+                console.error('Error fetching order:', error);
+                setLoadError(error.response?.data || "We could not load this order.");
+            });
     }, [orderId]);
+
+    useEffect(() => {
+        load();
+    }, [load]);
 
     const handleCancelOrder = async () => {
         if (!window.confirm("Are you sure you want to cancel this order?")) return;
@@ -31,6 +39,17 @@ function OrderTracking() {
             toast.error(error.response?.data || "Failed to cancel order");
         }
     };
+
+    if (loadError) {
+        return (
+            <div className="text-center mt-5">
+                <h5>Could not load this order</h5>
+                <p className="text-muted">{loadError}</p>
+                <button className="btn btn-outline-secondary btn-sm me-2" onClick={load}>Try again</button>
+                <a className="btn btn-outline-secondary btn-sm" href="/orders">Back to my orders</a>
+            </div>
+        );
+    }
 
     if (!order) return <div className="loading">Loading...</div>;
 

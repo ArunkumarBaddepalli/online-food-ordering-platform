@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { suggestEmail } from "../../../utils/emailSuggestion";
 import { saveBasicInfo } from "../../../services/api";
 
 const CUISINES = [
@@ -9,6 +11,7 @@ const CUISINES = [
 const OnboardStep1BasicInfo = ({ data, onChange, onboardingId, onNext }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [emailHint, setEmailHint] = useState(null);
 
     const toggleCuisine = (cuisine) => {
         const updated = data.cuisineTypes.includes(cuisine)
@@ -42,9 +45,10 @@ const OnboardStep1BasicInfo = ({ data, onChange, onboardingId, onNext }) => {
             {error && <div className="alert alert-danger">{error}</div>}
             <form onSubmit={handleSubmit}>
                 <div className="mb-3">
-                    <label className="form-label">Restaurant Name *</label>
+                    <label className="form-label">Restaurant Name <span className="text-danger">*</span></label>
                     <input className="form-control" value={data.restaurantName}
                         onChange={(e) => onChange({ ...data, restaurantName: e.target.value })} required />
+                    <div className="form-text">The name customers will see, not your own name.</div>
                 </div>
                 <div className="mb-3">
                     <label className="form-label">Description</label>
@@ -74,17 +78,30 @@ const OnboardStep1BasicInfo = ({ data, onChange, onboardingId, onNext }) => {
                 </div>
                 <div className="row">
                     <div className="col-md-6 mb-3">
-                        <label className="form-label">Phone *</label>
+                        <label className="form-label">Phone <span className="text-danger">*</span></label>
                         <input type="tel" className="form-control" value={data.phone}
                             onChange={(e) => onChange({ ...data, phone: e.target.value })} required />
                     </div>
                     <div className="col-md-6 mb-3">
                         <label className="form-label">Email</label>
                         <input type="email" className="form-control" value={data.email}
-                            onChange={(e) => onChange({ ...data, email: e.target.value })} />
+                            onChange={(e) => { onChange({ ...data, email: e.target.value }); setEmailHint(null); }}
+                            onBlur={(e) => setEmailHint(suggestEmail(e.target.value))} />
+                        {emailHint && (
+                            <div className="form-text text-warning">
+                                Did you mean{" "}
+                                <button type="button" className="btn btn-link btn-sm p-0 align-baseline"
+                                    onClick={() => { onChange({ ...data, email: emailHint }); setEmailHint(null); }}>
+                                    {emailHint}
+                                </button>?
+                            </div>
+                        )}
                     </div>
                 </div>
-                <div className="d-flex justify-content-end">
+                <div className="d-flex justify-content-between">
+                    <Link to="/partner/dashboard" className="btn btn-outline-secondary">
+                        ← Leave for now
+                    </Link>
                     <button type="submit" className="btn btn-primary" disabled={loading}>
                         {loading ? "Saving..." : "Next →"}
                     </button>

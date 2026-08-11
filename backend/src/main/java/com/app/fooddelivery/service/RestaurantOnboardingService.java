@@ -58,9 +58,11 @@ public class RestaurantOnboardingService {
             }
         });
 
-        // Set user role to RESTAURANT_OWNER
+        // Applying to list a restaurant makes an ordinary customer a partner.
+        // It must never touch an administrator: demoting them silently removes
+        // their access to the very screen that approves this application.
         User user = userRepository.findById(Objects.requireNonNull(userId)).orElseThrow();
-        if (!"RESTAURANT_OWNER".equals(user.getRole())) {
+        if ("USER".equals(user.getRole()) || user.getRole() == null) {
             user.setRole("RESTAURANT_OWNER");
             userRepository.save(user);
         }

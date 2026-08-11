@@ -2,6 +2,7 @@ import { toast } from "react-toastify";
 import React, { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { register, startOnboarding, saveSession } from "../services/api";
+import { suggestEmail } from "../utils/emailSuggestion";
 import { useNavigate } from "react-router-dom";
 
 const Register = () => {
@@ -9,6 +10,7 @@ const Register = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [address, setAddress] = useState("");
+    const [emailHint, setEmailHint] = useState(null);
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const isPartner = searchParams.get("role") === "RESTAURANT_OWNER";
@@ -50,22 +52,40 @@ const Register = () => {
                 )}
                 <form onSubmit={handleSubmit}>
                     <div className="mb-3">
-                        <label>Name</label>
+                        <label>Your name <span className="text-danger">*</span></label>
                         <input type="text" className="form-control" value={name}
                             onChange={(e) => setName(e.target.value)} required />
+                        {isPartner && (
+                            <div className="form-text">
+                                Your own name, not the restaurant's — you'll enter that during onboarding.
+                            </div>
+                        )}
                     </div>
                     <div className="mb-3">
-                        <label>Email</label>
+                        <label>Email <span className="text-danger">*</span></label>
                         <input type="email" className="form-control" value={email}
-                            onChange={(e) => setEmail(e.target.value)} required />
+                            onChange={(e) => { setEmail(e.target.value); setEmailHint(null); }}
+                            onBlur={(e) => setEmailHint(suggestEmail(e.target.value))}
+                            required />
+                        {emailHint && (
+                            <div className="form-text text-warning">
+                                Did you mean{" "}
+                                <button type="button" className="btn btn-link btn-sm p-0 align-baseline"
+                                    onClick={() => { setEmail(emailHint); setEmailHint(null); }}>
+                                    {emailHint}
+                                </button>?
+                            </div>
+                        )}
                     </div>
                     <div className="mb-3">
-                        <label>Password</label>
+                        <label>Password <span className="text-danger">*</span></label>
                         <input type="password" className="form-control" value={password}
+                            minLength={8}
                             onChange={(e) => setPassword(e.target.value)} required />
+                        <div className="form-text">At least 8 characters.</div>
                     </div>
                     <div className="mb-3">
-                        <label>Address</label>
+                        <label>Address <span className="text-danger">*</span></label>
                         <input type="text" className="form-control" value={address}
                             onChange={(e) => setAddress(e.target.value)} required />
                     </div>

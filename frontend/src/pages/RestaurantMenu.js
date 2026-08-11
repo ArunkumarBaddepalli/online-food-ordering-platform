@@ -211,8 +211,8 @@ const RestaurantMenu = () => {
                             <div className="col-md-8">
                                 <h2 className="mb-1">
                                     {restaurant.name}
-                                    <span className={`badge ms-3 ${restaurant.isOpen ? 'bg-success' : 'bg-danger'}`}>
-                                        {restaurant.isOpen ? '🟢 OPEN' : '🔴 CLOSED'}
+                                    <span className={`badge ms-3 ${restaurant.currentlyOpen ? 'bg-success' : 'bg-danger'}`}>
+                                        {restaurant.currentlyOpen ? '🟢 OPEN' : '🔴 CLOSED'}
                                     </span>
                                 </h2>
                                 <p className="text-muted mb-2">{restaurant.description}</p>

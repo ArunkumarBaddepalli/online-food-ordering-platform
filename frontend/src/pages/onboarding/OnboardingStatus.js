@@ -57,8 +57,8 @@ const OnboardingStatus = () => {
                             last days, so an animated loader implies work in progress. */}
                         <div className="fs-1 mb-2">🕒</div>
                         <h5>Under Review</h5>
-                        <p className="text-muted">Our team is reviewing your application. This typically takes 2-3 business days.</p>
-                        <small className="text-muted">You'll be notified once a decision is made.</small>
+                        <p className="text-muted">Our team is reviewing your application.</p>
+                        <small className="text-muted">Check back here for the decision.</small>
                     </div>
                 )}
 

@@ -49,6 +49,15 @@ public class Restaurant {
     // Used for browsing by cuisine on the home page.
     private String cuisineTypes;
 
+    /**
+     * Whether the kitchen is open right now, worked out from today's hours.
+     *
+     * Not stored: isOpen above is only the owner's on/off switch, and a listing
+     * that reads that alone calls a restaurant open at midnight.
+     */
+    @Transient
+    private Boolean currentlyOpen;
+
     // Per-day operating hours (populated on onboarding approval)
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "restaurant_id")

@@ -87,7 +87,14 @@ public class RestaurantController {
                     : exact;
         }
 
+        restaurants.forEach(this::markCurrentlyOpen);
         return ResponseEntity.ok(restaurants);
+    }
+
+    /** Works out whether the kitchen is open right now, for the listing. */
+    private void markCurrentlyOpen(Restaurant restaurant) {
+        restaurant.setCurrentlyOpen(
+                Boolean.TRUE.equals(restaurant.getIsOpen()) && hoursValidator.isRestaurantOpen(restaurant));
     }
 
     /**
@@ -143,7 +150,10 @@ public class RestaurantController {
     @GetMapping("/restaurants/{id}")
     public ResponseEntity<Restaurant> getRestaurantById(@PathVariable Long id) {
         return restaurantRepository.findById(id)
-                .map(ResponseEntity::ok)
+                .map(r -> {
+                    markCurrentlyOpen(r);
+                    return ResponseEntity.ok(r);
+                })
                 .orElse(ResponseEntity.notFound().build());
     }
 

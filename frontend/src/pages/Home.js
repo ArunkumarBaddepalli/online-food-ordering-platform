@@ -109,10 +109,10 @@ const Home = () => {
                                 <div className="d-flex justify-content-between align-items-start mb-2">
                                     <h5 className="card-title mb-0">{rest.name}</h5>
                                     <span
-                                        className={`badge ${rest.isOpen ? 'bg-success' : 'bg-danger'}`}
+                                        className={`badge ${rest.currentlyOpen ? 'bg-success' : 'bg-danger'}`}
                                         style={{ fontSize: '0.75rem' }}
                                     >
-                                        {rest.isOpen ? '🟢 OPEN' : '🔴 CLOSED'}
+                                        {rest.currentlyOpen ? '🟢 OPEN' : '🔴 CLOSED'}
                                     </span>
                                 </div>
 
@@ -210,7 +210,7 @@ const Home = () => {
                                     }
 
                                     return (
-                                        <p className="mb-2" style={{ fontSize: '0.9rem', color: rest.isOpen ? '#28a745' : '#dc3545' }}>
+                                        <p className="mb-2" style={{ fontSize: '0.9rem', color: rest.currentlyOpen ? '#28a745' : '#dc3545' }}>
                                             🕒 {message}
                                         </p>
                                     );
@@ -223,7 +223,7 @@ const Home = () => {
                                     </p>
                                 )}
 
-                                {rest.isOpen ? (
+                                {rest.currentlyOpen ? (
                                     <Link
                                         to={`/restaurant/${rest.id}`}
                                         className="btn btn-primary btn-sm mt-2 w-100"

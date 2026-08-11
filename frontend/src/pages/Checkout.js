@@ -1,6 +1,6 @@
 import { toast } from "react-toastify";
 import React, { useState, useEffect } from "react";
-import { placeOrder, getCart, getRestaurantLiveStatus, getUserAddresses, addUserAddress, updateUserAddress, deleteUserAddress, validateDelivery, getPaymentConfig, createRazorpayCheckout, verifyRazorpayPayment , getCurrentUser } from "../services/api";
+import { placeOrder, getCart, getRestaurantLiveStatus, getUserAddresses, addUserAddress, updateUserAddress, deleteUserAddress, validateDelivery, getAppConfig, createRazorpayCheckout, verifyRazorpayPayment , getCurrentUser } from "../services/api";
 import { useNavigate } from "react-router-dom";
 import { useCartCount } from "../context/CartCountContext";
 
@@ -8,7 +8,8 @@ import AddressMap from "../components/AddressMap";
 
 const Checkout = () => {
     const [address, setAddress] = useState("");
-    const [orderType, setOrderType] = useState("DELIVERY");
+    const [orderType, setOrderType] = useState("PICKUP");
+    const [deliveryEnabled, setDeliveryEnabled] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState("COD");
     const [onlineEnabled, setOnlineEnabled] = useState(false);
     const [paying, setPaying] = useState(false);
@@ -36,10 +37,19 @@ const Checkout = () => {
     const { refresh: refreshCartCount } = useCartCount();
 
     useEffect(() => {
-        // Online payment only appears when the server has Razorpay credentials.
-        getPaymentConfig()
-            .then((res) => setOnlineEnabled(Boolean(res.data?.onlineEnabled)))
-            .catch(() => setOnlineEnabled(false));
+        // The server decides what this deployment can do: online payment needs
+        // Razorpay credentials, home delivery needs riders, which is Phase 02.
+        getAppConfig()
+            .then((res) => {
+                setOnlineEnabled(Boolean(res.data?.onlinePaymentEnabled));
+                const delivery = Boolean(res.data?.deliveryEnabled);
+                setDeliveryEnabled(delivery);
+                if (delivery) setOrderType("DELIVERY");
+            })
+            .catch(() => {
+                setOnlineEnabled(false);
+                setDeliveryEnabled(false);
+            });
     }, []);
 
     useEffect(() => {
@@ -333,7 +343,15 @@ const Checkout = () => {
                 <form onSubmit={handlePlaceOrder}>
                     <div className="mb-3">
                         <label className="form-label"><strong>Order Type</strong></label>
+
+                        {!deliveryEnabled && (
+                            <p className="text-muted small mb-2">
+                                Collection only for now — home delivery is coming soon.
+                            </p>
+                        )}
+
                         <div className="d-flex gap-3">
+                            {deliveryEnabled && (
                             <div className="form-check">
                                 <input
                                     className="form-check-input"
@@ -348,6 +366,7 @@ const Checkout = () => {
                                     Delivery
                                 </label>
                             </div>
+                            )}
                             <div className="form-check">
                                 <input
                                     className="form-check-input"

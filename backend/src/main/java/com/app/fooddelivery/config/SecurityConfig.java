@@ -54,7 +54,7 @@ public class SecurityConfig {
                                 "/api/modifiers/**")
                         .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/restaurants/*/validate-delivery").permitAll()
-                        .requestMatchers("/api/payment/config").permitAll()
+                        .requestMatchers("/api/payment/config", "/api/config").permitAll()
 
                         // API documentation and uploaded images.
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**",

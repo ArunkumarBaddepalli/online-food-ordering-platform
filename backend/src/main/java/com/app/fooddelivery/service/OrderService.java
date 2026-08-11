@@ -33,6 +33,11 @@ public class OrderService {
     /** Minutes from order placement to expected delivery, used for the tracking countdown. */
     private static final int DEFAULT_DELIVERY_MINUTES = 35;
 
+    // Home delivery needs a rider to carry the order, which does not exist yet.
+    // Refused here as well as hidden in the UI, so the API tells the same story.
+    @org.springframework.beans.factory.annotation.Value("${orders.delivery-enabled:true}")
+    private boolean deliveryEnabled;
+
     @Autowired
     private RestaurantHoursValidator hoursValidator;
 
@@ -77,6 +82,11 @@ public class OrderService {
         Restaurant restaurant = cart.getItems().get(0).getFoodItem().getRestaurant();
 
         if (orderType == OrderType.DELIVERY) {
+            if (!deliveryEnabled) {
+                throw new RuntimeException(
+                        "Home delivery is not available yet. Please choose collection.");
+            }
+
             if (deliveryAddress == null || deliveryAddress.trim().isEmpty()) {
                 throw new RuntimeException("Delivery address is required for delivery orders.");
             }

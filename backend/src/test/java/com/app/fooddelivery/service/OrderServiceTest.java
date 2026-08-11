@@ -15,6 +15,7 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,6 +52,10 @@ class OrderServiceTest {
 
     @BeforeEach
     void setUp() {
+        // No Spring context here, so the delivery flag would default to false
+        // and every delivery order in these tests would be refused.
+        ReflectionTestUtils.setField(orderService, "deliveryEnabled", true);
+
         restaurant = new Restaurant();
         restaurant.setId(1L);
         restaurant.setName("Test Kitchen");
@@ -154,6 +159,29 @@ class OrderServiceTest {
         assertThat(order.getPayment().getPaymentMethod()).isEqualTo("COD");
         assertThat(order.getPayment().getPaymentStatus()).isEqualTo("PENDING");
         assertThat(order.getPayment().getAmount()).isEqualTo(25.98);
+    }
+
+    @Test
+    @DisplayName("Delivery orders are refused while home delivery is switched off")
+    void deliveryRefusedWhenDisabled() {
+        ReflectionTestUtils.setField(orderService, "deliveryEnabled", false);
+        FoodItem pizza = foodItem(1L, "Margherita", "UNLIMITED", 100, 12.99);
+        givenCartWith(pizza, 1);
+
+        assertThatThrownBy(() -> orderService.placeOrder(7L, "1 Test Street", null, OrderType.DELIVERY))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("not available yet");
+    }
+
+    @Test
+    @DisplayName("Collection still works while home delivery is switched off")
+    void pickupStillWorksWhenDeliveryDisabled() {
+        ReflectionTestUtils.setField(orderService, "deliveryEnabled", false);
+        FoodItem pizza = foodItem(1L, "Margherita", "UNLIMITED", 100, 12.99);
+        givenCartWith(pizza, 1);
+
+        assertThat(orderService.placeOrder(7L, null, null, OrderType.PICKUP).getOrderType())
+                .isEqualTo(OrderType.PICKUP);
     }
 
     @Test

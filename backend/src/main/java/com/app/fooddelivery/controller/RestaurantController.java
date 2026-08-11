@@ -42,6 +42,9 @@ public class RestaurantController {
     @Autowired
     private com.app.fooddelivery.service.GeocodingService geocodingService;
 
+    @Autowired
+    private com.app.fooddelivery.service.SearchMatcher searchMatcher;
+
     /**
      * Restaurants, optionally narrowed by a search term or a cuisine.
      *
@@ -65,27 +68,36 @@ public class RestaurantController {
         }
 
         if (search != null && !search.isBlank()) {
-            String term = search.trim().toLowerCase();
-            restaurants = restaurants.stream()
-                    .filter(r -> matches(r, term))
+            String term = search.trim();
+
+            // Exact matches first. Only if nothing matches at all do we forgive
+            // typos, so a good search is never diluted by near-misses.
+            List<Restaurant> exact = restaurants.stream()
+                    .filter(r -> matches(r, term, false))
                     .toList();
+
+            restaurants = exact.isEmpty()
+                    ? restaurants.stream().filter(r -> matches(r, term, true)).toList()
+                    : exact;
         }
 
         return ResponseEntity.ok(restaurants);
     }
 
-    private boolean matches(Restaurant restaurant, String term) {
-        if (contains(restaurant.getName(), term)
-                || contains(restaurant.getDescription(), term)
-                || contains(restaurant.getCuisineTypes(), term)) {
+    private boolean matches(Restaurant restaurant, String term, boolean forgiveTypos) {
+        if (fieldMatches(restaurant.getName(), term, forgiveTypos)
+                || fieldMatches(restaurant.getDescription(), term, forgiveTypos)
+                || fieldMatches(restaurant.getCuisineTypes(), term, forgiveTypos)) {
             return true;
         }
         return restaurantService.getFoodItemsByRestaurant(restaurant.getId()).stream()
-                .anyMatch(item -> contains(item.getName(), term));
+                .anyMatch(item -> fieldMatches(item.getName(), term, forgiveTypos));
     }
 
-    private boolean contains(String value, String term) {
-        return value != null && value.toLowerCase().contains(term);
+    private boolean fieldMatches(String value, String term, boolean forgiveTypos) {
+        return forgiveTypos
+                ? searchMatcher.matchesLoosely(value, term)
+                : searchMatcher.containsIgnoreCase(value, term);
     }
 
     /** The cuisines actually present on the platform, for the filter buttons. */

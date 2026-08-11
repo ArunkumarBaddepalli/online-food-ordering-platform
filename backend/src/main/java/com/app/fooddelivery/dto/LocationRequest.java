@@ -11,4 +11,5 @@ public class LocationRequest {
     private Double latitude;  // null triggers server-side geocoding
     private Double longitude;
     private Double deliveryRadiusKm;
+    private String timeZone;
 }

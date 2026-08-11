@@ -2,6 +2,19 @@ import React, { useState, useCallback } from "react";
 import { saveLocation } from "../../../services/api";
 import AddressMap from "../../../components/AddressMap";
 
+// Whatever this browser is set to, which is right in the ordinary case of an
+// owner applying from their own restaurant.
+const browserZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+
+// The browser's own zone first, then a short list covering the usual cases.
+const zoneOptions = Array.from(new Set([
+    browserZone,
+    "Asia/Kolkata", "Asia/Dubai", "Asia/Singapore", "Asia/Tokyo",
+    "Europe/London", "Europe/Berlin", "Europe/Paris",
+    "America/New_York", "America/Chicago", "America/Los_Angeles",
+    "Australia/Sydney", "UTC",
+]));
+
 const OnboardStep2Location = ({ data, onChange, onboardingId, onNext, onBack }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
@@ -54,6 +67,19 @@ const OnboardStep2Location = ({ data, onChange, onboardingId, onNext, onBack }) 
                             onChange={(e) => onChange({ ...data, zipCode: e.target.value })} />
                     </div>
                 </div>
+                <div className="mb-3">
+                    <label className="form-label">Time zone</label>
+                    <select className="form-select"
+                        value={data.timeZone || browserZone}
+                        onChange={(e) => onChange({ ...data, timeZone: e.target.value })}>
+                        {zoneOptions.map((z) => <option key={z} value={z}>{z}</option>)}
+                    </select>
+                    <div className="form-text">
+                        Your opening hours are read on this clock. Change it if the restaurant is
+                        somewhere other than where you are now.
+                    </div>
+                </div>
+
                 <div className="mb-3">
                     <label className="form-label">
                         Delivery Radius: <strong>{data.deliveryRadiusKm} km</strong>

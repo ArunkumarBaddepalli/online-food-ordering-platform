@@ -128,6 +128,7 @@ public class RestaurantOnboardingService {
         ob.setState(req.getState());
         ob.setZipCode(req.getZipCode());
         ob.setDeliveryRadiusKm(req.getDeliveryRadiusKm());
+        ob.setTimeZone(req.getTimeZone());
 
         if (req.getLatitude() != null && req.getLongitude() != null) {
             ob.setLatitude(req.getLatitude());
@@ -257,6 +258,7 @@ public class RestaurantOnboardingService {
         restaurant.setAcceptsScheduledOrders(ob.getAcceptsScheduledOrders());
         restaurant.setSlotDurationMinutes(ob.getSlotDurationMinutes());
         restaurant.setCuisineTypes(ob.getCuisineTypes());
+        restaurant.setTimeZone(ob.getTimeZone());
         restaurant.setIsOpen(false); // owner activates manually
 
         // Record who runs this restaurant. Without it the owner dashboard has

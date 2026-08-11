@@ -42,6 +42,9 @@ public class RestaurantOnboarding {
     private Double longitude;
     private Double deliveryRadiusKm;
 
+    /** IANA zone the restaurant keeps time in, e.g. "Asia/Kolkata". */
+    private String timeZone;
+
     // Step 3 — Hours settings (rows stored in OperatingHours table)
     private Boolean acceptsScheduledOrders = false;
     private Integer slotDurationMinutes = 30;

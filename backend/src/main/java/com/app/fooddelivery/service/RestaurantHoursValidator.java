@@ -5,6 +5,8 @@ import com.app.fooddelivery.model.RestaurantOperatingHours;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -32,6 +34,29 @@ public class RestaurantHoursValidator {
                 .parseCaseInsensitive()
                 .appendPattern(pattern)
                 .toFormatter(Locale.US);
+    }
+
+    /**
+     * The zone this restaurant keeps time in.
+     *
+     * Falls back to the server's own zone for restaurants recorded before this
+     * existed, which is what was silently assumed all along.
+     */
+    public ZoneId zoneOf(Restaurant restaurant) {
+        String configured = restaurant == null ? null : restaurant.getTimeZone();
+        if (configured == null || configured.isBlank()) {
+            return ZoneId.systemDefault();
+        }
+        try {
+            return ZoneId.of(configured);
+        } catch (Exception e) {
+            return ZoneId.systemDefault();
+        }
+    }
+
+    /** Right now, on the clock on the restaurant's wall. */
+    public ZonedDateTime nowAt(Restaurant restaurant) {
+        return ZonedDateTime.now(zoneOf(restaurant));
     }
 
     private LocalTime parseTime(String timeStr) {
@@ -63,7 +88,7 @@ public class RestaurantHoursValidator {
         if (restaurant.getOperatingHours() == null || restaurant.getOperatingHours().isEmpty()) {
             return null;
         }
-        String today = LocalDate.now().getDayOfWeek().name();
+        String today = nowAt(restaurant).getDayOfWeek().name();
         return restaurant.getOperatingHours().stream()
                 .filter(h -> today.equals(h.getDayOfWeek()))
                 .findFirst()
@@ -85,7 +110,7 @@ public class RestaurantHoursValidator {
             if (Boolean.FALSE.equals(todayHours.getIsOpen())) return false;
             LocalTime open = parseTime(todayHours.getOpenTime());
             LocalTime close = parseTime(todayHours.getCloseTime());
-            return isTimeInRange(LocalTime.now(), open, close);
+            return isTimeInRange(nowAt(restaurant).toLocalTime(), open, close);
         }
 
         // Fall back to legacy single pair
@@ -95,7 +120,7 @@ public class RestaurantHoursValidator {
         try {
             LocalTime open = parseTime(restaurant.getOpeningTime());
             LocalTime close = parseTime(restaurant.getClosingTime());
-            return isTimeInRange(LocalTime.now(), open, close);
+            return isTimeInRange(nowAt(restaurant).toLocalTime(), open, close);
         } catch (Exception e) {
             return true;
         }
@@ -109,7 +134,7 @@ public class RestaurantHoursValidator {
             return null;
         }
         for (int i = 1; i <= 7; i++) {
-            LocalDate date = LocalDate.now().plusDays(i);
+            LocalDate date = nowAt(restaurant).toLocalDate().plusDays(i);
             String dayName = date.getDayOfWeek().name();
             java.util.Optional<RestaurantOperatingHours> found = restaurant.getOperatingHours().stream()
                     .filter(h -> dayName.equals(h.getDayOfWeek()) && Boolean.TRUE.equals(h.getIsOpen()))

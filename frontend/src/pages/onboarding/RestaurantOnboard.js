@@ -33,6 +33,7 @@ const RestaurantOnboard = () => {
     const [location, setLocation] = useState({
         street: "", city: "", state: "", zipCode: "",
         latitude: null, longitude: null, deliveryRadiusKm: 10,
+    , timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
     });
     const [hours, setHours] = useState(defaultHours);
     const [hoursSettings, setHoursSettings] = useState({

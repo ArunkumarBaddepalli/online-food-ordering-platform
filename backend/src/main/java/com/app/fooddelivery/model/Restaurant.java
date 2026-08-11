@@ -50,6 +50,15 @@ public class Restaurant {
     private String cuisineTypes;
 
     /**
+     * Where this restaurant keeps time, as an IANA zone such as "Asia/Kolkata".
+     *
+     * Opening hours are wall-clock readings: "11 PM" means eleven at night
+     * where the kitchen is, never where the server or the customer happens to
+     * be. Without this, moving the server changes who is open.
+     */
+    private String timeZone;
+
+    /**
      * Whether the kitchen is open right now, worked out from today's hours.
      *
      * Not stored: isOpen above is only the owner's on/off switch, and a listing

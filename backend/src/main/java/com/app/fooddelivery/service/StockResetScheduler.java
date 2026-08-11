@@ -17,14 +17,22 @@ public class StockResetScheduler {
     @Autowired
     private FoodItemRepository foodItemRepository;
 
+    @Autowired
+    private RestaurantHoursValidator hoursValidator;
+
     @Scheduled(cron = "0 * * * * *") // runs every minute
     @Transactional
     public void resetDailyStock() {
         List<FoodItem> dailyItems = foodItemRepository.findByStockResetType("DAILY");
-        LocalDate today = LocalDate.now();
-        LocalTime now = LocalTime.now();
 
         for (FoodItem item : dailyItems) {
+            // "Restocked at 9am" means nine in the morning where the kitchen
+            // is. Read on the server's clock it would fire at the wrong time
+            // for anywhere else.
+            java.time.ZonedDateTime local = hoursValidator.nowAt(item.getRestaurant());
+            LocalDate today = local.toLocalDate();
+            LocalTime now = local.toLocalTime();
+
             if (item.getDailyRestockTime() == null || item.getDailyStockLimit() == null) {
                 continue;
             }

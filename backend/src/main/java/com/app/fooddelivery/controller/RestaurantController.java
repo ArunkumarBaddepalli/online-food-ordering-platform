@@ -332,9 +332,10 @@ public class RestaurantController {
             LocalTime close = parseTime(closeTime, formatters);
             if (open == null || close == null) return slots;
 
-            LocalDateTime now = LocalDateTime.now();
+            // Slots are offered on the restaurant's clock, not the server's.
+            LocalDateTime now = hoursValidator.nowAt(restaurant).toLocalDateTime();
             for (int day = 0; day < 2; day++) {
-                LocalDate baseDate = LocalDate.now().plusDays(day);
+                LocalDate baseDate = now.toLocalDate().plusDays(day);
                 LocalDateTime slotTime = LocalDateTime.of(baseDate, open);
                 LocalDateTime closeDateTime = LocalDateTime.of(baseDate, close);
                 if (close.isBefore(open)) closeDateTime = closeDateTime.plusDays(1);

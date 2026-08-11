@@ -34,6 +34,9 @@ public class RestaurantOnboardingService {
     @Autowired
     private RestaurantOperatingHoursRepository restaurantOperatingHoursRepository;
 
+    @Autowired
+    private NotificationEmailService notifications;
+
     /**
      * Start or resume onboarding for a user.
      * - Returns existing DRAFT/SUBMITTED record (idempotent).
@@ -285,7 +288,10 @@ public class RestaurantOnboardingService {
         ob.setStatus(OnboardingStatus.APPROVED);
         ob.setReviewedAt(LocalDateTime.now());
         ob.setCreatedRestaurantId(saved.getId());
-        return onboardingRepository.save(ob);
+        RestaurantOnboarding approved = onboardingRepository.save(ob);
+
+        notifications.restaurantApproved(ob.getUserId(), ob.getRestaurantName());
+        return approved;
     }
 
     /**
@@ -297,7 +303,10 @@ public class RestaurantOnboardingService {
         ob.setStatus(OnboardingStatus.REJECTED);
         ob.setRejectionReason(reason);
         ob.setReviewedAt(LocalDateTime.now());
-        return onboardingRepository.save(ob);
+        RestaurantOnboarding rejected = onboardingRepository.save(ob);
+
+        notifications.restaurantRejected(ob.getUserId(), ob.getRestaurantName(), reason);
+        return rejected;
     }
 
     /**
@@ -309,7 +318,10 @@ public class RestaurantOnboardingService {
         ob.setStatus(OnboardingStatus.DOCUMENTS_REQUIRED);
         ob.setRejectionReason(reason);
         ob.setReviewedAt(LocalDateTime.now());
-        return onboardingRepository.save(ob);
+        RestaurantOnboarding updated = onboardingRepository.save(ob);
+
+        notifications.documentsRequested(ob.getUserId(), ob.getRestaurantName(), reason);
+        return updated;
     }
 
     public List<RestaurantOnboarding> adminListAll() {

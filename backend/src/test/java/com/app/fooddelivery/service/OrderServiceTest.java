@@ -40,6 +40,7 @@ class OrderServiceTest {
     @Mock private RestaurantHoursValidator hoursValidator;
     @Mock private GeocodingService geocodingService;
     @Mock private RazorpayPaymentService razorpayPaymentService;
+    @Mock private NotificationEmailService notifications;
     @Mock private DistanceCalculationService distanceCalculationService;
 
     // Real lifecycle rules rather than a mock — the transitions are the thing

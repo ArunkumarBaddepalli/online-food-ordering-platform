@@ -46,6 +46,9 @@ const Login = () => {
                     <button type="submit" className="btn btn-primary w-100">Login</button>
                 </form>
                 <div className="text-center mt-3">
+                    <Link to="/forgot-password">Forgotten your password?</Link>
+                </div>
+                <div className="text-center mt-2">
                     <span className="text-muted">Want to partner with us? </span>
                     <Link to="/register?role=RESTAURANT_OWNER">Register as Restaurant Partner</Link>
                 </div>

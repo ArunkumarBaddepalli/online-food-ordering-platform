@@ -38,6 +38,11 @@ public class OrderService {
     @org.springframework.beans.factory.annotation.Value("${orders.delivery-enabled:true}")
     private boolean deliveryEnabled;
 
+    // Off until a mail server is configured. Requiring a confirmed address
+    // while no confirmation email can be sent would lock out every new account.
+    @org.springframework.beans.factory.annotation.Value("${orders.require-verified-email:false}")
+    private boolean requireVerifiedEmail;
+
     @Autowired
     private RestaurantHoursValidator hoursValidator;
 
@@ -46,6 +51,9 @@ public class OrderService {
 
     @Autowired
     private RazorpayPaymentService razorpayPaymentService;
+
+    @Autowired
+    private NotificationEmailService notifications;
 
     @Autowired
     private GeocodingService geocodingService;
@@ -77,6 +85,11 @@ public class OrderService {
 
         if (cart.getItems().isEmpty()) {
             throw new RuntimeException("Cart is empty");
+        }
+
+        if (requireVerifiedEmail && !Boolean.TRUE.equals(cart.getUser().getEmailVerified())) {
+            throw new RuntimeException(
+                    "Please confirm your email address before ordering. Check your inbox for the link.");
         }
 
         Restaurant restaurant = cart.getItems().get(0).getFoodItem().getRestaurant();
@@ -249,7 +262,13 @@ public class OrderService {
             paymentRepository.save(payment);
         }
 
-        return orderRepository.save(order);
+        Order saved = orderRepository.save(order);
+
+        if (statusFlow.isTerminal(target) && !OrderStatusFlow.CANCELLED.equals(target)) {
+            notifications.orderCompleted(saved);
+        }
+
+        return saved;
     }
 
     /**
@@ -281,13 +300,15 @@ public class OrderService {
             }
         }
 
+        boolean refunded = false;
+
         Payment payment = order.getPayment();
         if (payment != null) {
             if ("ONLINE".equals(payment.getPaymentMethod()) && "PAID".equals(payment.getPaymentStatus())) {
                 // Money was actually taken, so it has to go back. The service
                 // marks it REFUND_PENDING if Razorpay does not confirm, rather
                 // than pretending the customer has been repaid.
-                razorpayPaymentService.refund(payment);
+                refunded = razorpayPaymentService.refund(payment);
             } else {
                 payment.setPaymentStatus("CANCELLED");
                 paymentRepository.save(payment);
@@ -296,6 +317,9 @@ public class OrderService {
 
         order.setStatus("CANCELLED");
         order.setStatusChangedAt(LocalDateTime.now());
-        return orderRepository.save(order);
+        Order cancelled = orderRepository.save(order);
+
+        notifications.orderCancelled(cancelled, refunded);
+        return cancelled;
     }
 }

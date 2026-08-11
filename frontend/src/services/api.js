@@ -55,6 +55,10 @@ api.interceptors.response.use(
 // Auth
 export const register = (user) => api.post("/auth/register", user);
 export const login = (user) => api.post("/auth/login", user);
+export const verifyEmail = (token) => api.post("/auth/verify", { token });
+export const resendVerification = (email) => api.post("/auth/verify/resend", { email });
+export const requestPasswordReset = (email) => api.post("/auth/forgot-password", { email });
+export const resetPassword = (token, password) => api.post("/auth/reset-password", { token, password });
 
 // Restaurants
 export const getRestaurants = (search = "", cuisine = "") => {

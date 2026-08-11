@@ -39,6 +39,7 @@ class RefundOnCancelTest {
     @Mock private GeocodingService geocodingService;
     @Mock private DistanceCalculationService distanceCalculationService;
     @Mock private RazorpayPaymentService razorpayPaymentService;
+    @Mock private NotificationEmailService notifications;
 
     @Spy private OrderStatusFlow statusFlow = new OrderStatusFlow();
 

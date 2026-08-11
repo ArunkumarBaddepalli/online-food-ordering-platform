@@ -7,7 +7,7 @@ const Home = () => {
     const [restaurants, setRestaurants] = useState([]);
     const [cuisines, setCuisines] = useState([]);
     const [term, setTerm] = useState("");
-    const [cuisine, setCuisine] = useState("");
+    const [selectedCuisines, setSelectedCuisines] = useState([]);
     const [searching, setSearching] = useState(false);
     const [ratings, setRatings] = useState({});
 
@@ -21,16 +21,22 @@ const Home = () => {
     useEffect(() => {
         setSearching(true);
         const timer = setTimeout(() => {
-            getRestaurants(term, cuisine)
+            getRestaurants(term, selectedCuisines.join(","))
                 .then((response) => setRestaurants(response.data))
                 .catch((error) => console.error(error))
                 .finally(() => setSearching(false));
         }, 300);
         return () => clearTimeout(timer);
-    }, [term, cuisine]);
+    }, [term, selectedCuisines]);
 
-    const clearAll = () => { setTerm(""); setCuisine(""); };
-    const filtered = Boolean(term || cuisine);
+    const toggleCuisine = (name) =>
+        setSelectedCuisines((current) =>
+            current.includes(name)
+                ? current.filter((c) => c !== name)
+                : [...current, name]);
+
+    const clearAll = () => { setTerm(""); setSelectedCuisines([]); };
+    const filtered = Boolean(term || selectedCuisines.length);
 
     return (
         <div className="container mt-4">
@@ -50,16 +56,25 @@ const Home = () => {
             </div>
 
             {cuisines.length > 0 && (
-                <div className="d-flex flex-wrap gap-2 mb-4">
+                <div className="d-flex flex-wrap align-items-center gap-2 mb-4">
                     {cuisines.map((c) => (
                         <button
                             key={c}
-                            className={`btn btn-sm ${cuisine === c ? "btn-success" : "btn-outline-secondary"}`}
-                            onClick={() => setCuisine(cuisine === c ? "" : c)}
+                            className={`btn btn-sm ${selectedCuisines.includes(c) ? "btn-success" : "btn-outline-secondary"}`}
+                            onClick={() => toggleCuisine(c)}
                         >
                             {c}
                         </button>
                     ))}
+
+                    {selectedCuisines.length > 0 && (
+                        <button
+                            className="btn btn-sm btn-link text-decoration-none"
+                            onClick={() => setSelectedCuisines([])}
+                        >
+                            Clear {selectedCuisines.length} filter{selectedCuisines.length > 1 ? "s" : ""}
+                        </button>
+                    )}
                 </div>
             )}
 

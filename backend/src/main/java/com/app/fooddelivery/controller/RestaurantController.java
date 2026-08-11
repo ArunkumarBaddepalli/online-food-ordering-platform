@@ -60,10 +60,16 @@ public class RestaurantController {
         List<Restaurant> restaurants = restaurantService.getAllRestaurants();
 
         if (cuisine != null && !cuisine.isBlank()) {
-            String wanted = cuisine.trim().toLowerCase();
+            // Several cuisines arrive comma separated. Match any of them, not
+            // all: a restaurant tagged both Chinese and Thai is rare, so
+            // requiring both would return almost nothing.
+            List<String> wanted = java.util.Arrays.stream(cuisine.split(","))
+                    .map(c -> c.trim().toLowerCase())
+                    .filter(c -> !c.isEmpty())
+                    .toList();
+
             restaurants = restaurants.stream()
-                    .filter(r -> r.getCuisineTypes() != null
-                            && r.getCuisineTypes().toLowerCase().contains(wanted))
+                    .filter(r -> hasAnyCuisine(r, wanted))
                     .toList();
         }
 
@@ -82,6 +88,21 @@ public class RestaurantController {
         }
 
         return ResponseEntity.ok(restaurants);
+    }
+
+    /**
+     * Compares whole tags, not substrings: "Indian" must not pull in
+     * "North Indian" as though the customer had asked for both.
+     */
+    private boolean hasAnyCuisine(Restaurant restaurant, List<String> wanted) {
+        if (restaurant.getCuisineTypes() == null) {
+            return false;
+        }
+        List<String> tags = java.util.Arrays.stream(restaurant.getCuisineTypes().split(","))
+                .map(c -> c.trim().toLowerCase())
+                .toList();
+
+        return wanted.stream().anyMatch(tags::contains);
     }
 
     private boolean matches(Restaurant restaurant, String term, boolean forgiveTypos) {

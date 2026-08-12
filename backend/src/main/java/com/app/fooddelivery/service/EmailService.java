@@ -31,6 +31,12 @@ public class EmailService {
     @Value("${spring.mail.host:}")
     private String mailHost;
 
+    @Value("${spring.mail.username:}")
+    private String mailUsername;
+
+    @Value("${spring.mail.password:}")
+    private String mailPassword;
+
     @Value("${app.mail.from:no-reply@fooddelivery.local}")
     private String from;
 
@@ -56,12 +62,25 @@ public class EmailService {
             log.info("Email is live: sending through {} as {}", mailHost, from);
         } else {
             log.warn("Email is NOT being sent. Messages will be logged instead. "
-                    + "Set MAIL_HOST, MAIL_USERNAME and MAIL_PASSWORD in backend/.env.local to send for real.");
+                    + "Set MAIL_HOST, MAIL_USERNAME and MAIL_PASSWORD in backend/.env.local to send for real. "
+                    + "(host={}, username={}, password={})",
+                    notBlank(mailHost) ? "set" : "missing",
+                    notBlank(mailUsername) ? "set" : "missing",
+                    notBlank(mailPassword) ? "set" : "missing");
         }
     }
 
+    /**
+     * Configured means genuinely able to send, not merely pointed at a host.
+     * A host with no credentials looks set up and then fails on every message,
+     * which is worse than plainly saying it is off.
+     */
     public boolean isConfigured() {
-        return mailHost != null && !mailHost.isBlank();
+        return notBlank(mailHost) && notBlank(mailUsername) && notBlank(mailPassword);
+    }
+
+    private boolean notBlank(String value) {
+        return value != null && !value.isBlank();
     }
 
     public String baseUrl() {

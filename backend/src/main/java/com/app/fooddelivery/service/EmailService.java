@@ -44,6 +44,22 @@ public class EmailService {
         this.mailSender = mailSender;
     }
 
+    /**
+     * Says on startup whether mail will actually be delivered.
+     *
+     * Without this the difference between "sending" and "quietly logging" is
+     * invisible until somebody notices a receipt never arrived.
+     */
+    @jakarta.annotation.PostConstruct
+    void reportConfiguration() {
+        if (isConfigured()) {
+            log.info("Email is live: sending through {} as {}", mailHost, from);
+        } else {
+            log.warn("Email is NOT being sent. Messages will be logged instead. "
+                    + "Set MAIL_HOST, MAIL_USERNAME and MAIL_PASSWORD in backend/.env.local to send for real.");
+        }
+    }
+
     public boolean isConfigured() {
         return mailHost != null && !mailHost.isBlank();
     }

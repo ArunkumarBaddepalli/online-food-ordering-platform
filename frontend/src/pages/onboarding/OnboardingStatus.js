@@ -9,7 +9,7 @@ const OnboardingStatus = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (!user) { navigate("/login"); return; }
+        if (!user) { navigate("/login", { state: { from: window.location.pathname } }); return; }
         getOnboardingStatus(user.id)
             .then((res) => setOnboarding(res.data))
             .catch(() => setOnboarding(null))

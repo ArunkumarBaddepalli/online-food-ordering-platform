@@ -61,6 +61,9 @@ const RestaurantMenu = () => {
             return;
         }
         if (!isLoggedIn) {
+            // Say why the page is about to change. Without this the screen just
+            // swaps to a sign-in form and looks like the button misfired.
+            toast.info("Please sign in to add items to your cart.");
             // Remember where we were so login can send the user straight back.
             navigate("/login", { state: { from: location.pathname } });
             return;

@@ -48,7 +48,7 @@ const RestaurantOnboard = () => {
     });
 
     useEffect(() => {
-        if (!user) { navigate("/login"); return; }
+        if (!user) { navigate("/login", { state: { from: window.location.pathname } }); return; }
         (async () => {
             try {
                 const res = await getOnboardingStatus(user.id);
@@ -82,12 +82,16 @@ const RestaurantOnboard = () => {
             phone: ob.phone || "",
             email: ob.email || "",
         });
-        if (ob.street) setLocation({
+        if (ob.street) setLocation((current) => ({
             street: ob.street || "", city: ob.city || "",
             state: ob.state || "", zipCode: ob.zipCode || "",
             latitude: ob.latitude || null, longitude: ob.longitude || null,
             deliveryRadiusKm: ob.deliveryRadiusKm || 10,
-        });
+            // Whatever was saved, else this browser's zone. Rebuilding the object
+            // without this dropped the zone when an application was resumed, and
+            // the hours were then read in the server's zone instead.
+            timeZone: ob.timeZone || current.timeZone,
+        }));
         if (ob.operatingHours && ob.operatingHours.length === 7) {
             setHours(ob.operatingHours.map((h) => ({
                 dayOfWeek: h.dayOfWeek, isOpen: h.isOpen,

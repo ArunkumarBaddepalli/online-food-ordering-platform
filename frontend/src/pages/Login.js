@@ -28,10 +28,21 @@ const Login = () => {
         }
     };
 
+    // Arriving here from somewhere else means the user did not choose to sign
+    // in, they were sent. Saying so, and that they will be put back, stops the
+    // form looking like the button they pressed did the wrong thing.
+    const sentHere = Boolean(new URLSearchParams(location.search).get("next")
+        || location.state?.from);
+
     return (
         <div className="row justify-content-center">
             <div className="col-md-4">
                 <h2>Login</h2>
+                {sentHere && (
+                    <div className="alert alert-light border py-2 small">
+                        Sign in to carry on. We will take you back to where you were.
+                    </div>
+                )}
                 <form onSubmit={handleSubmit}>
                     <div className="mb-3">
                         <label>Email</label>

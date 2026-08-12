@@ -13,7 +13,7 @@ const RestaurantDashboard = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (!user) { navigate("/login"); return; }
+        if (!user) { navigate("/login", { state: { from: window.location.pathname } }); return; }
 
         // Owning a restaurant is what decides whether there is a dashboard to
         // show. The onboarding application only matters for owners who do not

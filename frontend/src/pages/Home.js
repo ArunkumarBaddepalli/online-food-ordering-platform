@@ -137,8 +137,6 @@ const Home = () => {
                                 {(() => {
                                     if (!rest.openingTime || !rest.closingTime) return null;
 
-                                    const now = new Date();
-
                                     // Robust time parser (handles "11:00", "11:00 AM", "23:00")
                                     const parseTime = (timeStr) => {
                                         if (!timeStr) return { h: 0, m: 0 };
@@ -173,40 +171,50 @@ const Home = () => {
                                     const openTimeStr = formatDisplayTime(start.h, start.m);
                                     const closeTimeStr = formatDisplayTime(end.h, end.m);
 
-                                    // Create Date objects for logic comparison
-                                    const openDate = new Date();
-                                    openDate.setHours(start.h, start.m, 0, 0);
+                                    // The hours are the restaurant's wall clock, so "today" and
+                                    // "tomorrow" have to be judged on that clock too. Reading the
+                                    // browser's clock says "opens tomorrow" to somebody in another
+                                    // country when the place opens in an hour.
+                                    const minutesNowThere = () => {
+                                        const local = new Date();
+                                        if (!rest.timeZone) {
+                                            return local.getHours() * 60 + local.getMinutes();
+                                        }
+                                        try {
+                                            const parts = new Intl.DateTimeFormat("en-US", {
+                                                timeZone: rest.timeZone,
+                                                hour: "2-digit",
+                                                minute: "2-digit",
+                                                hourCycle: "h23",
+                                            }).formatToParts(local);
+                                            const at = (t) => parseInt(parts.find((p) => p.type === t)?.value, 10);
+                                            const h = at("hour") % 24;   // some engines report midnight as 24
+                                            return h * 60 + at("minute");
+                                        } catch {
+                                            return local.getHours() * 60 + local.getMinutes();
+                                        }
+                                    };
 
-                                    const closeDate = new Date();
-                                    closeDate.setHours(end.h, end.m, 0, 0);
-
-                                    // If closing time is earlier than opening time, it means it closes the next day (e.g. 11 AM to 2 AM)
-                                    if (closeDate <= openDate) {
-                                        closeDate.setDate(closeDate.getDate() + 1);
-                                    }
+                                    const nowMinutes = minutesNowThere();
+                                    const openMinutes = start.h * 60 + start.m;
+                                    const closeMinutes = end.h * 60 + end.m;
+                                    const closesAfterMidnight = closeMinutes <= openMinutes;
 
                                     let message = "";
-                                    const isCloseTomorrow = closeDate.getDate() !== now.getDate();
 
-                                    if (rest.isOpen) {
-                                        // Case 1: Restaurant is OPEN
-                                        // Check if it closes today or tomorrow
-                                        if (isCloseTomorrow) {
-                                            message = `Closes tomorrow at ${closeTimeStr}`;
-                                        } else {
-                                            message = `Closes today at ${closeTimeStr}`;
-                                        }
+                                    // currentlyOpen is the server's answer, worked out on the
+                                    // restaurant's clock. isOpen is only the owner's master switch:
+                                    // using it here claimed "Closes today at 11:00 PM" at midnight.
+                                    if (rest.currentlyOpen) {
+                                        message = closesAfterMidnight && nowMinutes >= openMinutes
+                                            ? `Closes tomorrow at ${closeTimeStr}`
+                                            : `Closes today at ${closeTimeStr}`;
+                                    } else if (!rest.isOpen) {
+                                        message = "Not taking orders right now";
                                     } else {
-                                        // Case 2: Restaurant is CLOSED
-                                        // Determine when it opens next
-
-                                        // If "now" is before today's opening time, it opens today
-                                        if (now < openDate) {
-                                            message = `Opens today at ${openTimeStr}`;
-                                        } else {
-                                            // Assume it reads "Opens tomorrow"
-                                            message = `Opens tomorrow at ${openTimeStr}`;
-                                        }
+                                        message = nowMinutes < openMinutes
+                                            ? `Opens today at ${openTimeStr}`
+                                            : `Opens tomorrow at ${openTimeStr}`;
                                     }
 
                                     return (

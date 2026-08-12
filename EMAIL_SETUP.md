@@ -80,17 +80,19 @@ Check the inbox, and the spam folder. Mail from a personal Gmail account to itse
 
 ---
 
-## Once it is working
+## Confirmed addresses are required
 
-Require a confirmed address before anybody can order, in `application.properties`:
+This is **already on**, in `application.properties`:
 
 ```properties
 orders.require-verified-email=true
 ```
 
-Leave this off until mail is actually delivering. With it on and no mail working, a new account can never confirm and so can never order.
+A new account must click the link in its confirmation email before it can order. Checkout says so plainly and offers to send the link again.
 
 Accounts that existed before verification was added are already marked confirmed and are never asked.
+
+Set it back to `false` if you ever run without a mail server. With it on and no mail working, a new account can never confirm and so can never order.
 
 ---
 

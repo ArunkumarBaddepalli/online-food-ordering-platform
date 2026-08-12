@@ -1,6 +1,11 @@
-# Phase 02 — Order Lifecycle & Receipts
+# Order Lifecycle & Receipts — delivered
 
-**Status:** awaiting answers to Part D. No code written yet.
+**Status: built and in use.** Kept for the reasoning behind the design; it is no
+longer a plan. Owners move orders through their stages from the partner portal,
+and prepaid orders offer a receipt while cash orders do not.
+
+"Phase 02" now means rider tracking, which is [PHASE_02_RIDER_PLAN.md](PHASE_02_RIDER_PLAN.md)
+and is still unbuilt.
 
 Two pieces of work:
 

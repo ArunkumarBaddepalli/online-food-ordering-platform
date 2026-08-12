@@ -1,6 +1,6 @@
 import { toast } from "react-toastify";
 import React, { useState, useEffect } from "react";
-import { placeOrder, getCart, getRestaurantLiveStatus, getUserAddresses, addUserAddress, updateUserAddress, deleteUserAddress, validateDelivery, getAppConfig, createRazorpayCheckout, verifyRazorpayPayment , getCurrentUser } from "../services/api";
+import { placeOrder, getCart, getRestaurantLiveStatus, getUserAddresses, addUserAddress, updateUserAddress, deleteUserAddress, validateDelivery, getAppConfig, createRazorpayCheckout, verifyRazorpayPayment , getCurrentUser, resendVerification } from "../services/api";
 import { useNavigate } from "react-router-dom";
 import { useCartCount } from "../context/CartCountContext";
 
@@ -31,6 +31,7 @@ const Checkout = () => {
     const [editingAddressId, setEditingAddressId] = useState(null);
     const [validationResult, setValidationResult] = useState({ possible: true, message: "" });
     const [isCheckingDelivery, setIsCheckingDelivery] = useState(false);
+    const [resending, setResending] = useState(false);
 
     const navigate = useNavigate();
     const user = getCurrentUser();
@@ -331,6 +332,35 @@ const Checkout = () => {
                         {!isOpen && restaurantInfo.acceptsScheduledOrders && (
                             <div className="mt-1 small">You can schedule this order for a later time slot.</div>
                         )}
+                    </div>
+                )}
+
+                {/* Said here rather than only after the order is refused, and with
+                    a way out for anyone who lost or never got the first email. */}
+                {user && user.emailVerified === false && (
+                    <div className="alert alert-warning mb-3">
+                        <strong>Confirm your email first.</strong>
+                        <div className="small mt-1">
+                            We sent a link to {user.email}. Orders need a confirmed address.
+                        </div>
+                        <button
+                            type="button"
+                            className="btn btn-sm btn-outline-dark mt-2"
+                            disabled={resending}
+                            onClick={async () => {
+                                setResending(true);
+                                try {
+                                    await resendVerification(user.email);
+                                    toast.success("A new link is on its way. Check your inbox.");
+                                } catch {
+                                    toast.error("Could not send it just now. Please try again.");
+                                } finally {
+                                    setResending(false);
+                                }
+                            }}
+                        >
+                            {resending ? "Sending…" : "Send the link again"}
+                        </button>
                     </div>
                 )}
 

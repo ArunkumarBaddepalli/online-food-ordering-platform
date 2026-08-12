@@ -147,10 +147,13 @@ public class OrderController {
             OrderETAService.ETAResult eta = etaService.calculateETA(order);
             Map<String, Object> orderData = new HashMap<>();
             orderData.put("order", order);
-            orderData.put("eta", Map.of(
-                    "minutesRemaining", eta.getMinutesRemaining(),
-                    "estimatedDeliveryTime", eta.getEstimatedDeliveryTime(),
-                    "statusMessage", eta.getStatusMessage()));
+            // A plain HashMap, not Map.of: that throws on a null value, and one
+            // order with no estimated time would take the whole list down.
+            Map<String, Object> etaData = new HashMap<>();
+            etaData.put("minutesRemaining", eta.getMinutesRemaining());
+            etaData.put("estimatedDeliveryTime", eta.getEstimatedDeliveryTime());
+            etaData.put("statusMessage", eta.getStatusMessage());
+            orderData.put("eta", etaData);
             return orderData;
         }).toList();
 

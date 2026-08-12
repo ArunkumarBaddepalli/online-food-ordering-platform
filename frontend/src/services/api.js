@@ -133,6 +133,7 @@ export const verifyRazorpayPayment = (payload) => api.post("/payment/razorpay/ve
 // Order History
 export const getUserOrders = (userId) => api.get(`/order/user/${userId}`);
 export const getOrderDetails = (orderId) => api.get(`/order/${orderId}`);
+export const getActiveOrders = (userId) => api.get(`/order/user/${userId}/active`);
 
 // User Profile
 export const getUserProfile = (userId) => api.get(`/users/${userId}`);

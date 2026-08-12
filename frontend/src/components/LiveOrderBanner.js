@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { API_BASE } from '../services/api';
+import { getActiveOrders } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import './LiveOrderBanner.css';
 
@@ -16,9 +15,12 @@ const LiveOrderBanner = ({ userId }) => {
     useEffect(() => {
         if (!userId) return;
 
+        // Through the shared client, so the request carries the signed-in
+        // token. Called bare, this endpoint answers 401 and the banner never
+        // appeared at all.
         const fetchActiveOrders = async () => {
             try {
-                const response = await axios.get(`${API_BASE}/api/order/user/${userId}/active`);
+                const response = await getActiveOrders(userId);
                 setActiveOrders(response.data);
             } catch (error) {
                 console.error('Error fetching active orders:', error);
@@ -38,21 +40,31 @@ const LiveOrderBanner = ({ userId }) => {
     const order = activeOrders[0]; // Show only the first active order
     const { eta } = order;
 
+    // Nothing is being ridden anywhere on a collection order, and while home
+    // delivery is switched off every order is a collection.
+    const isPickup = order.order?.orderType === 'PICKUP';
+    const ready = order.order?.status === 'READY_FOR_PICKUP';
+
     return (
         <div className="live-order-banner">
             <div className="banner-content">
                 <div className="banner-icon">
-                    <span>🛵</span>
+                    <span>{isPickup ? '🍽️' : '🛵'}</span>
                 </div>
                 <div className="banner-info">
                     <div className="banner-status">{eta.statusMessage}</div>
                     <div className="banner-eta">
-                        {eta.minutesRemaining > 0 ? (
-                            <>Arriving in <strong>{eta.minutesRemaining} min</strong></>
+                        {ready ? (
+                            <strong>Waiting for you at the counter</strong>
+                        ) : eta.minutesRemaining > 0 ? (
+                            <>
+                                {isPickup ? 'Ready in ' : 'Arriving in '}
+                                <strong>{eta.minutesRemaining} min</strong>
+                            </>
                         ) : (
                             // The countdown reaching zero only means the estimate
-                            // elapsed, not that the order was actually delivered.
-                            <strong>Arriving any moment</strong>
+                            // elapsed, not that the order was actually handed over.
+                            <strong>{isPickup ? 'Ready any moment' : 'Arriving any moment'}</strong>
                         )}
                     </div>
                 </div>

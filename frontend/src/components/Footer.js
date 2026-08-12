@@ -14,9 +14,10 @@ const Footer = () => (
             <div className="row gy-4">
                 <div className="col-lg-4">
                     <h5 className="mb-2">🍕 Food Delivery</h5>
+                    {/* Collection only for now, so this must not promise delivery. */}
                     <p className="text-muted small mb-0">
-                        Order from restaurants near you, follow your order while it is
-                        prepared, and pay by card or on delivery.
+                        Order from restaurants near you, follow it while it is being
+                        prepared, and pay by card or in cash when you collect.
                     </p>
                 </div>
 
@@ -43,15 +44,6 @@ const Footer = () => (
                     <ul className="footer-links">
                         <li><Link to="/register?role=RESTAURANT_OWNER">List your restaurant</Link></li>
                         <li><Link to="/partner/dashboard">Partner portal</Link></li>
-                    </ul>
-                </div>
-
-                <div className="col-6 col-lg-2">
-                    <h6 className="footer-heading">How it works</h6>
-                    <ul className="footer-links">
-                        <li><span className="text-muted">Delivery or pickup</span></li>
-                        <li><span className="text-muted">Cash or card</span></li>
-                        <li><span className="text-muted">Live order tracking</span></li>
                     </ul>
                 </div>
             </div>

@@ -56,11 +56,20 @@ public class OrderETAService {
                 statusMessage = "Your order is on the way";
                 break;
 
+            // Collection orders have their own two stages. Without these they
+            // fell through to the default below and a meal sitting on the
+            // counter reported "Processing your order, 30 minutes".
+            case "READY_FOR_PICKUP":
+                return finished(order, now, "Ready to collect");
+
+            case "PICKED_UP":
+                return finished(order, now, "Order collected");
+
             case "DELIVERED":
-                return new ETAResult(0, order.getEstimatedDeliveryAt(), "Order delivered");
+                return finished(order, now, "Order delivered");
 
             case "CANCELLED":
-                return new ETAResult(0, order.getEstimatedDeliveryAt(), "Order cancelled");
+                return finished(order, now, "Order cancelled");
 
             default:
                 fallbackMinutes = 30;
@@ -85,6 +94,21 @@ public class OrderETAService {
         }
 
         return new ETAResult((int) minutesRemaining, target, statusMessage);
+    }
+
+    /**
+     * Nothing is left to wait for, so there are no minutes remaining.
+     *
+     * The time is still filled in rather than left null: most orders in the
+     * database predate that column, and callers that put these values into a
+     * response map cannot hold a null.
+     */
+    private ETAResult finished(Order order, LocalDateTime now, String message) {
+        LocalDateTime when = order.getEstimatedDeliveryAt();
+        if (when == null) {
+            when = order.getOrderDate() != null ? order.getOrderDate() : now;
+        }
+        return new ETAResult(0, when, message);
     }
 
     /**

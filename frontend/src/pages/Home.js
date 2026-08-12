@@ -145,7 +145,7 @@ const Home = () => {
                                         const match = timeStr.match(/(\d+):(\d+)\s*([APap][Mm])?/);
                                         if (!match) return { h: 0, m: 0 };
 
-                                        let [_, hStr, mStr, ampm] = match;
+                                        let [, hStr, mStr, ampm] = match;
                                         let h = parseInt(hStr, 10);
                                         let m = parseInt(mStr, 10);
 

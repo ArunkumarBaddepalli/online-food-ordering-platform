@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { register, startOnboarding, saveSession } from "../services/api";
 import { suggestEmail } from "../utils/emailSuggestion";
-import { useNavigate } from "react-router-dom";
 
 const Register = () => {
     const [name, setName] = useState("");
@@ -11,7 +10,6 @@ const Register = () => {
     const [password, setPassword] = useState("");
     const [address, setAddress] = useState("");
     const [emailHint, setEmailHint] = useState(null);
-    const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const isPartner = searchParams.get("role") === "RESTAURANT_OWNER";
 

@@ -1,5 +1,5 @@
 import { toast } from "react-toastify";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 
 
 const ModifierSelectionModal = ({ foodItem, onClose, onAddToOrder }) => {
@@ -10,6 +10,16 @@ const ModifierSelectionModal = ({ foodItem, onClose, onAddToOrder }) => {
     const [quantity, setQuantity] = useState(1);
 
     // No need for useEffect fetch since we have data in foodItem
+
+    // Defined before the effect that uses it, and memoised, so the price
+    // recalculation can depend on it without re-running on every render.
+    const findModifier = useCallback((modId) => {
+        for (const group of modifierGroups) {
+            const found = group.modifiers.find(m => m.id === parseInt(modId));
+            if (found) return found;
+        }
+        return null;
+    }, [modifierGroups]);
 
     // Recalculate total price whenever selections change
     useEffect(() => {
@@ -28,15 +38,7 @@ const ModifierSelectionModal = ({ foodItem, onClose, onAddToOrder }) => {
             }
         });
         setTotalPrice(foodItem.price + modifierTotal);
-    }, [selections, modifierGroups, foodItem.price]);
-
-    const findModifier = (modId) => {
-        for (const group of modifierGroups) {
-            const found = group.modifiers.find(m => m.id === parseInt(modId));
-            if (found) return found;
-        }
-        return null;
-    };
+    }, [selections, foodItem.price, findModifier]);
 
     const handleSelectionChange = (groupId, modId, type) => {
         setSelections(prev => {

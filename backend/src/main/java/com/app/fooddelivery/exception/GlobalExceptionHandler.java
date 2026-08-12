@@ -24,6 +24,19 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>("Not found", HttpStatus.NOT_FOUND);
     }
 
+    /**
+     * A missing or unreadable parameter is the caller's mistake, so it is a 400.
+     * The catch-all below reported these as 500, which reads as "the server is
+     * broken" when in fact the request was incomplete.
+     */
+    @ExceptionHandler({ org.springframework.web.bind.MissingServletRequestParameterException.class,
+            org.springframework.web.bind.MethodArgumentNotValidException.class,
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class,
+            org.springframework.http.converter.HttpMessageNotReadableException.class })
+    public ResponseEntity<String> handleBadRequest(Exception ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<String> handleRuntimeException(RuntimeException ex) {
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);

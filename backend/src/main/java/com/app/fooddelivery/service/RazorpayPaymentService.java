@@ -81,6 +81,11 @@ public class RazorpayPaymentService {
         if ("PAID".equals(payment.getPaymentStatus())) {
             throw new RuntimeException("This order has already been paid for");
         }
+        // A checkout page left open while the order was cancelled must not be
+        // able to take money for food nobody is going to cook.
+        if ("CANCELLED".equals(order.getStatus())) {
+            throw new RuntimeException("This order was cancelled, so it cannot be paid for.");
+        }
 
         // Razorpay works in the smallest currency unit, so rupees become paise.
         long amountInPaise = Math.round(order.getTotalAmount() * 100);
@@ -159,9 +164,20 @@ public class RazorpayPaymentService {
         payment.setPaymentStatus("PAID");
         payment.setRazorpayPaymentId(razorpayPaymentId);
         payment.setPaymentDate(LocalDateTime.now());
+        paymentRepository.save(payment);
 
         log.info("Order {} paid online, razorpay payment {}", orderId, razorpayPaymentId);
-        return paymentRepository.save(payment);
+
+        // The order can be cancelled between opening the checkout and paying.
+        // The money is genuinely taken by then, so record it as paid and give it
+        // straight back rather than keeping it for an order nobody will cook.
+        if ("CANCELLED".equals(order.getStatus())) {
+            log.warn("Order {} was cancelled before payment landed. Refunding.", orderId);
+            refund(payment);
+            paymentRepository.save(payment);
+        }
+
+        return payment;
     }
 
     /**

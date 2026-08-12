@@ -1,6 +1,6 @@
 import { toast } from "react-toastify";
 import React, { useEffect, useState } from "react";
-import { getRestaurantMenu, addToCart, clearCart, getRestaurantLiveStatus, API_BASE } from "../services/api";
+import { getRestaurantMenu, addToCart, clearCart, API_BASE } from "../services/api";
 import ModifierSelectionModal from "../components/ModifierSelectionModal";
 import { useCartCount } from "../context/CartCountContext";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
@@ -10,7 +10,6 @@ const RestaurantMenu = () => {
     const { id } = useParams();
     const [menu, setMenu] = useState([]);
     const [restaurant, setRestaurant] = useState(null);
-    const [liveStatus, setLiveStatus] = useState(null);
     const navigate = useNavigate();
     const location = useLocation();
     const { refresh: refreshCartCount } = useCartCount();
@@ -30,13 +29,7 @@ const RestaurantMenu = () => {
         axios.get(`${API_BASE}/api/restaurants/${id}`)
             .then(response => setRestaurant(response.data))
             .catch(console.error);
-        getRestaurantLiveStatus(id).then(response => setLiveStatus(response.data)).catch(console.error);
     }, [id]);
-
-    const formatNextAvailable = (ts) => {
-        if (!ts) return null;
-        return new Date(ts).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
-    };
 
     const [selectedFoodItem, setSelectedFoodItem] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);

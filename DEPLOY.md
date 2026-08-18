@@ -63,6 +63,25 @@ If it says email is not being sent, the mail values are missing. Either add them
 or set `ORDERS_REQUIRE_VERIFIED_EMAIL` to `false`, because otherwise a new
 account can never confirm its address and so can never order.
 
+### If the first build fails
+
+**"Dockerfile not found"** — Render's own documentation disagrees with itself on
+whether `dockerfilePath` is read from the repository root or from `rootDir`. This
+file assumes `rootDir`, which is what its monorepo page says. If the build cannot
+find the file, change those two lines in `render.yaml` to spell out the full path
+and push again:
+
+```yaml
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+```
+
+The same applies to the site: if the build succeeds but the site is empty, change
+`staticPublishPath: build` to `frontend/build`.
+
+**"No such file: package-lock.json"** — the site's build runs in `frontend`. Check
+`rootDir: frontend` is still there.
+
 ---
 
 ## Signing in to the deployed copy

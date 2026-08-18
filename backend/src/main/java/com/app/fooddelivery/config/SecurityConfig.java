@@ -11,6 +11,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
@@ -99,11 +100,22 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    /**
+     * Which sites the browser may call this API from.
+     *
+     * Hardcoding localhost meant a deployed front end was refused by the
+     * browser before the request ever arrived. Patterns are used rather than
+     * exact origins so a hosted site can be allowed without redeploying the
+     * API to learn its own address.
+     */
+    @Value("${app.cors.allowed-origins:http://localhost:3000}")
+    private String allowedOrigins;
+
     @Bean
     public UrlBasedCorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.setAllowedOrigins(List.of("http://localhost:3000"));
+        config.setAllowedOriginPatterns(List.of(allowedOrigins.split("\\s*,\\s*")));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 

@@ -35,6 +35,15 @@
 			<artifactId>mysql-connector-j</artifactId>
 			<scope>runtime</scope>
 		</dependency>
+
+		<!-- MySQL locally, PostgreSQL where it is hosted: free hosting offers
+		     Postgres and not MySQL. Hibernate picks the dialect from the URL,
+		     so only the connection details differ between the two. -->
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<scope>runtime</scope>
+		</dependency>
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>

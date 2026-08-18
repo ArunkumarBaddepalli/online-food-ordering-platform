@@ -135,6 +135,11 @@ public class DataSeeder implements CommandLineRunner {
         r.setEmail(email);
         r.setOpeningTime(open);
         r.setClosingTime(close);
+        // These addresses are in India, and the hours above are that city's
+        // clock. Left unset, the hours are read in the server's own zone, which
+        // is UTC wherever this is hosted: every restaurant would then open and
+        // close five and a half hours out.
+        r.setTimeZone("Asia/Kolkata");
         r.setIsOpen(true);
         r.setAcceptsScheduledOrders(true);
         r.setSlotDurationMinutes(30);

@@ -12,7 +12,7 @@ is anything secret — you supply those once, in the dashboard.
 | Piece | Where it runs | Cost |
 |---|---|---|
 | The site | Render static hosting | free |
-| The API | Render web service, built from `backend/Dockerfile` | free |
+| The API | Render web service, built from `Dockerfile` | free |
 | The database | Render PostgreSQL | free for 30 days |
 
 The database runs on PostgreSQL rather than MySQL, because no free host offers
@@ -65,22 +65,17 @@ account can never confirm its address and so can never order.
 
 ### If the first build fails
 
-**"Dockerfile not found"** — Render's own documentation disagrees with itself on
-whether `dockerfilePath` is read from the repository root or from `rootDir`. This
-file assumes `rootDir`, which is what its monorepo page says. If the build cannot
-find the file, change those two lines in `render.yaml` to spell out the full path
-and push again:
+Send the build log. The paths in `render.yaml` are all written from the
+repository root, and the image has been built and run locally exactly as the
+host builds it, so a failure is likely to be something specific to the account
+rather than the file.
 
-```yaml
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
-```
+**The site shows Render's "service waking up" screen and never loads** — that
+screen belongs to a service with nothing deployed. Look at the service's
+**Events** tab: the first build failed. The log says why.
 
-The same applies to the site: if the build succeeds but the site is empty, change
-`staticPublishPath: build` to `frontend/build`.
-
-**"No such file: package-lock.json"** — the site's build runs in `frontend`. Check
-`rootDir: frontend` is still there.
+**"No such file: package-lock.json"** — the site's build does its own
+`cd frontend`. Check `buildCommand` still has it.
 
 ---
 

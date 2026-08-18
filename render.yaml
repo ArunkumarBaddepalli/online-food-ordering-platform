@@ -14,8 +14,8 @@ services:
     name: food-delivery-api
     runtime: docker
     plan: free
-    rootDir: backend
     dockerfilePath: ./Dockerfile
+    dockerContext: .
     healthCheckPath: /api/config
     envVars:
       - key: DATABASE_URL
@@ -79,9 +79,8 @@ services:
   - type: web
     name: food-delivery-web
     runtime: static
-    rootDir: frontend
-    buildCommand: npm ci && npm run build
-    staticPublishPath: build
+    buildCommand: cd frontend && npm ci && npm run build
+    staticPublishPath: frontend/build
     envVars:
       # Built with Node 18, as it is locally. Newer versions reject some of the
       # older build tooling this app uses.

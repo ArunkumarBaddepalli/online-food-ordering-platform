@@ -1,13 +1,15 @@
-# Build and run the API in one file, so the host needs no Java or Maven of its own.
+# Builds and runs the API. Kept at the repository root, and every path below is
+# written from here, because a host that resolves them from somewhere else
+# cannot find the file and the build fails before it starts.
 
 FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /build
 
 # Dependencies first: this layer is reused whenever only source files change.
-COPY pom.xml .
+COPY backend/pom.xml .
 RUN mvn -q -B dependency:go-offline
 
-COPY src ./src
+COPY backend/src ./src
 RUN mvn -q -B -DskipTests package
 
 FROM eclipse-temurin:17-jre

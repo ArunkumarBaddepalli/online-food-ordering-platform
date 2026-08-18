@@ -1,0 +1,9 @@
+# The build only needs the backend sources. Everything else here makes the
+# upload larger and slower for no benefit.
+frontend
+node_modules
+**/node_modules
+**/target
+.git
+*.md
+uploads

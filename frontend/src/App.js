@@ -115,8 +115,11 @@ function Shell() {
 }
 
 function App() {
+  // basename is empty when the site is served from a domain's root, which is the
+  // usual case, and the sub-path when it is hosted under one. Without it every
+  // route below is looked for at the wrong address.
   return (
-    <Router>
+    <Router basename={process.env.PUBLIC_URL}>
       <CartCountProvider>
         <Shell />
       </CartCountProvider>
